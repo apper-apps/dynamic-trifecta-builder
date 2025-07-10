@@ -63,6 +63,25 @@
   .drop-zone.drag-over {
     @apply border-blue-500 bg-blue-50 shadow-lg;
   }
+  
+  .canvas-grid {
+    background-image: 
+      linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+      radial-gradient(circle, #e5e7eb 1px, transparent 1px);
+    background-size: 20px 20px, 20px 20px, 20px 20px;
+  }
+  
+  .connection-line-animated {
+    stroke-dasharray: 8, 4;
+    animation: dash 2s linear infinite;
+  }
+  
+  @keyframes dash {
+    to {
+      stroke-dashoffset: -12;
+    }
+  }
 }
 
 /* React Toastify Overrides */

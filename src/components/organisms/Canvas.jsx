@@ -11,14 +11,25 @@ const Canvas = ({
   onUpdateEntity,
   onDeleteEntity,
   onAddConnection,
-  onDeleteConnection 
+  onDeleteConnection,
+  onAddEntity 
 }) => {
   const [draggedEntity, setDraggedEntity] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isConnecting, setIsConnecting] = useState(false);
   const [connectionStart, setConnectionStart] = useState(null);
   const [tempConnection, setTempConnection] = useState(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [draggedFromLibrary, setDraggedFromLibrary] = useState(null);
   const canvasRef = useRef(null);
+
+  // Grid snap helper
+  const snapToGrid = (position, gridSize = 20) => {
+    return {
+      x: Math.round(position.x / gridSize) * gridSize,
+      y: Math.round(position.y / gridSize) * gridSize
+    };
+  };
 
   const handleMouseDown = useCallback((e, entity) => {
     if (e.target.closest(".connection-handle")) return;
@@ -43,13 +54,16 @@ const Canvas = ({
       y: e.clientY - rect.top - dragOffset.y
     };
     
+    // Snap to grid
+    const snappedPosition = snapToGrid(newPosition);
+    
     // Constrain to canvas bounds
-    newPosition.x = Math.max(0, Math.min(rect.width - 200, newPosition.x));
-    newPosition.y = Math.max(0, Math.min(rect.height - 150, newPosition.y));
+    snappedPosition.x = Math.max(0, Math.min(rect.width - 200, snappedPosition.x));
+    snappedPosition.y = Math.max(0, Math.min(rect.height - 150, snappedPosition.y));
     
     onUpdateEntity(draggedEntity.id, {
       ...draggedEntity,
-      position: newPosition
+      position: snappedPosition
     });
   }, [draggedEntity, dragOffset, onUpdateEntity]);
 
@@ -57,6 +71,40 @@ const Canvas = ({
     setDraggedEntity(null);
     setDragOffset({ x: 0, y: 0 });
   }, []);
+
+  // Handle drag from library
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    if (!canvasRef.current?.contains(e.relatedTarget)) {
+      setIsDragOver(false);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const entityType = e.dataTransfer.getData("text/plain");
+    if (entityType && onAddEntity) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      const dropPosition = {
+        x: e.clientX - rect.left - 100, // Center the entity
+        y: e.clientY - rect.top - 75
+      };
+      
+      const snappedPosition = snapToGrid(dropPosition);
+      
+      // Ensure position is within bounds
+      snappedPosition.x = Math.max(0, Math.min(rect.width - 200, snappedPosition.x));
+      snappedPosition.y = Math.max(0, Math.min(rect.height - 150, snappedPosition.y));
+      
+      onAddEntity(entityType, snappedPosition);
+    }
+  }, [onAddEntity]);
 
   const handleConnectionStart = (entityId, e) => {
     e.stopPropagation();
@@ -67,11 +115,23 @@ const Canvas = ({
   const handleConnectionEnd = (entityId, e) => {
     e.stopPropagation();
     if (isConnecting && connectionStart && connectionStart !== entityId) {
+      const fromEntity = entities.find(e => e.id === connectionStart);
+      const toEntity = entities.find(e => e.id === entityId);
+      
+      // Determine connection type based on entity types
+      let connectionType = "ownership";
+      let label = "owns";
+      
+      if (toEntity?.type === "Form1040") {
+        connectionType = "income";
+        label = "reports to";
+      }
+      
       onAddConnection({
         from: connectionStart,
         to: entityId,
-        type: "ownership",
-        label: "owns"
+        type: connectionType,
+        label: label
       });
     }
     setIsConnecting(false);
@@ -87,7 +147,18 @@ const Canvas = ({
     }
   };
 
-  const renderConnection = (connection) => {
+  const handleConnectionClick = (connection) => {
+    const fromEntity = entities.find(e => e.id === connection.from);
+    const toEntity = entities.find(e => e.id === connection.to);
+    
+    if (connection.type === "ownership") {
+      alert(`Ownership Connection:\n${fromEntity?.name} owns ${toEntity?.name}\n\nOwnership Percentage: 100%\nVoting Rights: Full Control\nTax Implications: Pass-through taxation`);
+    } else if (connection.type === "income") {
+      alert(`Income Flow Connection:\n${fromEntity?.name} reports income to ${toEntity?.name}\n\nIncome Type: Business Income\nTax Treatment: Schedule C/E\nFlow-through: Yes`);
+    }
+  };
+
+const renderConnection = (connection) => {
     const fromEntity = entities.find(e => e.id === connection.from);
     const toEntity = entities.find(e => e.id === connection.to);
     
@@ -106,6 +177,10 @@ const Canvas = ({
     const midX = (fromPos.x + toPos.x) / 2;
     const midY = (fromPos.y + toPos.y) / 2;
     
+    const isIncomeFlow = connection.type === "income";
+    const strokeColor = isIncomeFlow ? "#10B981" : "#6B7280";
+    const strokeDasharray = isIncomeFlow ? "8,4" : "none";
+    
     return (
       <g key={connection.id}>
         <defs>
@@ -119,26 +194,30 @@ const Canvas = ({
           >
             <polygon
               points="0 0, 10 3.5, 0 7"
-              fill="#6B7280"
+              fill={strokeColor}
             />
           </marker>
         </defs>
         
         <path
           d={`M ${fromPos.x} ${fromPos.y} Q ${midX} ${midY - 50} ${toPos.x} ${toPos.y}`}
-          stroke="#6B7280"
+          stroke={strokeColor}
           strokeWidth="2"
+          strokeDasharray={strokeDasharray}
           fill="none"
           markerEnd={`url(#arrowhead-${connection.id})`}
-          className="hover:stroke-blue-500 cursor-pointer"
-          onClick={() => onDeleteConnection(connection.id)}
+          className={`hover:stroke-blue-500 cursor-pointer transition-all duration-200 ${
+            isIncomeFlow ? 'animate-pulse-slow' : ''
+          }`}
+          onClick={() => handleConnectionClick(connection)}
         />
         
         <text
           x={midX}
           y={midY - 25}
           textAnchor="middle"
-          className="text-sm fill-gray-600 font-medium"
+          className="text-sm font-medium pointer-events-none"
+          fill={strokeColor}
         >
           {connection.label}
         </text>
@@ -146,13 +225,18 @@ const Canvas = ({
     );
   };
 
-  return (
+return (
     <div
       ref={canvasRef}
-      className="relative w-full h-full canvas-grid bg-white rounded-lg border-2 border-gray-200 overflow-hidden"
+      className={`relative w-full h-full canvas-grid bg-white rounded-lg border-2 transition-all duration-200 overflow-hidden ${
+        isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+      }`}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onClick={handleCanvasClick}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
     >
       {/* SVG for connections */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
@@ -178,7 +262,7 @@ const Canvas = ({
             </p>
             <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
               <ApperIcon name="MousePointer" size={16} />
-              <span>Click and drag to get started</span>
+              <span>Drag from library or click to add</span>
             </div>
           </motion.div>
         </div>

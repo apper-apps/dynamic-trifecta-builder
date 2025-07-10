@@ -44,37 +44,46 @@ const ComponentToolbar = ({ onAddEntity }) => {
       </div>
       
       <div className="space-y-3">
-        {entityTypes.map((entity, index) => (
+{entityTypes.map((entity, index) => (
           <motion.div
             key={entity.type}
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onAddEntity(entity.type)}
-              className="w-full justify-start p-3 h-auto hover:shadow-md"
+            <div
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData("text/plain", entity.type);
+                e.dataTransfer.effectAllowed = "copy";
+              }}
+              className="mb-2"
             >
-              <div className={`p-2 rounded-lg bg-gradient-to-r ${entity.gradient} mr-3`}>
-                <ApperIcon name={entity.icon} size={16} className="text-white" />
-              </div>
-              <div className="text-left">
-                <div className="font-medium text-gray-900">{entity.type}</div>
-                <div className="text-xs text-gray-500">{entity.description}</div>
-              </div>
-            </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onAddEntity(entity.type)}
+                className="w-full justify-start p-3 h-auto hover:shadow-md drag-handle transition-all duration-200 hover:scale-105"
+              >
+                <div className={`p-2 rounded-lg bg-gradient-to-r ${entity.gradient} mr-3`}>
+                  <ApperIcon name={entity.icon} size={16} className="text-white" />
+                </div>
+                <div className="text-left">
+                  <div className="font-medium text-gray-900">{entity.type}</div>
+                  <div className="text-xs text-gray-500">{entity.description}</div>
+                </div>
+              </Button>
+            </div>
           </motion.div>
         ))}
       </div>
       
-      <div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+<div className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
         <div className="flex items-start gap-2">
           <ApperIcon name="Lightbulb" size={16} className="text-blue-600 mt-0.5" />
           <div className="text-sm text-blue-800">
             <p className="font-medium mb-1">Pro Tip!</p>
-            <p>Drag components to the canvas and connect them to visualize your structure.</p>
+            <p>Drag components to the canvas or click to add. Connect entities to show relationships.</p>
           </div>
         </div>
       </div>

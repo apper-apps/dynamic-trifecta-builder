@@ -58,12 +58,30 @@ const CanvasPage = () => {
     }
   };
 
-  const handleAddEntity = async (type) => {
+const handleAddEntity = async (type, customPosition = null) => {
     try {
+      // Default positions for structured layout
+      const defaultPositions = {
+        Trust: { x: 200, y: 400 },      // Bottom center
+        Form1040: { x: 200, y: 500 },  // Below Trust
+        LLC: { x: 400, y: 300 },       // Right side
+        SCorp: { x: 50, y: 300 }       // Left side
+      };
+      
+      const position = customPosition || defaultPositions[type] || 
+        { x: 50 + Math.random() * 200, y: 50 + Math.random() * 200 };
+      
+      const entityLabels = {
+        Trust: "Foundation",
+        LLC: "Asset Holdings",
+        SCorp: "Business Operations", 
+        Form1040: "Tax Blender"
+      };
+      
       const newEntity = await EntityService.create({
         type,
-        name: `New ${type}`,
-        position: { x: 50 + Math.random() * 200, y: 50 + Math.random() * 200 },
+        name: entityLabels[type] || `New ${type}`,
+        position,
         properties: {
           description: `A new ${type} entity`
         }
@@ -162,7 +180,7 @@ const CanvasPage = () => {
           icon="Layers"
         />
       ) : (
-        <Canvas
+<Canvas
           entities={entities}
           connections={connections}
           selectedEntity={selectedEntity}
@@ -171,6 +189,7 @@ const CanvasPage = () => {
           onDeleteEntity={handleDeleteEntity}
           onAddConnection={handleAddConnection}
           onDeleteConnection={handleDeleteConnection}
+          onAddEntity={handleAddEntity}
         />
       )}
     </Layout>

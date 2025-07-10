@@ -19,15 +19,17 @@ class ConnectionService {
     return { ...connection };
   }
 
-  async create(connectionData) {
+async create(connectionData) {
     await this.delay(300);
+    const connectionId = this.getNextId();
     const newConnection = {
-      Id: this.getNextId(),
-      id: this.getNextId().toString(),
+      Id: connectionId,
+      id: connectionId.toString(),
       from: connectionData.from,
       to: connectionData.to,
       type: connectionData.type || "ownership",
-      label: connectionData.label || "owns"
+      label: connectionData.label || "owns",
+      properties: connectionData.properties || {}
     };
     this.connections.push(newConnection);
     return { ...newConnection };

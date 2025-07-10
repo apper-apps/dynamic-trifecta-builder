@@ -20,14 +20,18 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
       },
-      animation: {
+animation: {
         'float': 'float 3s ease-in-out infinite',
         'pulse-slow': 'pulse 3s ease-in-out infinite',
+        'dash': 'dash 2s linear infinite',
       },
       keyframes: {
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-10px)' },
+        },
+        dash: {
+          'to': { 'stroke-dashoffset': '-12' },
         }
       }
     },

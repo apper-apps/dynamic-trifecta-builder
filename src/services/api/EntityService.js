@@ -19,11 +19,12 @@ class EntityService {
     return { ...entity };
   }
 
-  async create(entityData) {
+async create(entityData) {
     await this.delay(400);
+    const entityId = this.getNextId();
     const newEntity = {
-      Id: this.getNextId(),
-      id: this.getNextId().toString(),
+      Id: entityId,
+      id: entityId.toString(),
       type: entityData.type,
       name: entityData.name,
       position: entityData.position || { x: 0, y: 0 },

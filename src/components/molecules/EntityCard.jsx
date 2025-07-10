@@ -49,16 +49,16 @@ const EntityCard = ({
   const config = entityConfig[entity.type] || entityConfig.Trust;
 
   return (
-    <motion.div
+<motion.div
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={{ scale: isDragging ? 1.0 : 1.02 }}
+      whileTap={{ scale: 0.98 }}
       className={cn(
-        "entity-card w-48 bg-white border-2 cursor-move select-none",
+        "entity-card w-48 bg-white border-2 cursor-move select-none transition-all duration-200",
         isSelected && "ring-2 ring-blue-500 ring-offset-2",
-        isDragging && "opacity-50 rotate-3 scale-105",
+        isDragging && "opacity-70 rotate-1 scale-105 shadow-2xl z-50",
         config.borderColor
       )}
       onClick={onSelect}
