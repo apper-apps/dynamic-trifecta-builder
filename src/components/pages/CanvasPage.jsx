@@ -60,6 +60,12 @@ const CanvasPage = () => {
 
 const handleAddEntity = async (type, customPosition = null) => {
     try {
+      // Validation: Only one Form1040 allowed
+      if (type === "Form1040" && entities.some(e => e.type === "Form1040")) {
+        toast.error("Only one Form 1040 allowed per structure");
+        return;
+      }
+      
       // Default positions for structured layout
       const defaultPositions = {
         Trust: { x: 200, y: 400 },      // Bottom center
@@ -70,6 +76,18 @@ const handleAddEntity = async (type, customPosition = null) => {
       
       const position = customPosition || defaultPositions[type] || 
         { x: 50 + Math.random() * 200, y: 50 + Math.random() * 200 };
+      
+      // Validate position doesn't cause overlap
+      const entitySize = { width: 200, height: 150 };
+      const overlap = entities.some(e => 
+        Math.abs(e.position.x - position.x) < entitySize.width &&
+        Math.abs(e.position.y - position.y) < entitySize.height
+      );
+      
+      if (overlap) {
+        toast.error("Cannot place entity - position would overlap with existing entity");
+        return;
+      }
       
       const entityLabels = {
         Trust: "Foundation",
@@ -123,8 +141,28 @@ const handleAddEntity = async (type, customPosition = null) => {
     }
   };
 
-  const handleAddConnection = async (connectionData) => {
+const handleAddConnection = async (connectionData) => {
     try {
+      // Additional validation at the page level
+      const fromEntity = entities.find(e => e.id === connectionData.from);
+      const toEntity = entities.find(e => e.id === connectionData.to);
+      
+      if (!fromEntity || !toEntity) {
+        toast.error("Invalid connection - entities not found");
+        return;
+      }
+      
+      // Check for duplicate connections
+      const isDuplicate = connections.some(c => 
+        (c.from === connectionData.from && c.to === connectionData.to) ||
+        (c.from === connectionData.to && c.to === connectionData.from)
+      );
+      
+      if (isDuplicate) {
+        toast.error("Connection already exists between these entities");
+        return;
+      }
+      
       const newConnection = await ConnectionService.create(connectionData);
       setConnections(prev => [...prev, newConnection]);
       toast.success("Connection created successfully!");
