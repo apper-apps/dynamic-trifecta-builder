@@ -45,24 +45,12 @@ const [hoveredEntity, setHoveredEntity] = React.useState(null);
     Form1040: "Your personal tax blender - where all income gets mixed! 📋"
   };
 
-  const handleMouseEnter = (entityType, event) => {
+const handleMouseEnter = (entityType, event) => {
     setHoveredEntity({ type: entityType, element: event.currentTarget });
-    
-// Voice narration integration
-    if ('speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(entityTooltips[entityType]);
-      utterance.rate = 0.8;
-      utterance.pitch = 1.1;
-      utterance.volume = 0.7;
-      window.speechSynthesis.speak(utterance);
-    }
   };
 
-const handleMouseLeave = () => {
+  const handleMouseLeave = () => {
     setHoveredEntity(null);
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
   };
 
   return (
@@ -117,11 +105,11 @@ const handleMouseLeave = () => {
               </Button>
               
               {/* Playful tooltip */}
-              {hoveredEntity?.type === entity.type && (
+{hoveredEntity?.type === entity.type && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="absolute z-50 left-full ml-2 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg max-w-xs speaking"
+                  className="absolute z-50 left-full ml-2 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg max-w-xs"
                   role="tooltip"
                 >
                   {entityTooltips[entity.type]}
