@@ -29,7 +29,7 @@ const PropertiesPanel = ({ selectedEntity, onUpdateEntity, onClose }) => {
 
   const getEntityFields = () => {
     switch (selectedEntity.type) {
-      case "Trust":
+case "Trust":
         return (
           <>
             <div className="space-y-2">
@@ -42,6 +42,91 @@ const PropertiesPanel = ({ selectedEntity, onUpdateEntity, onClose }) => {
                 <option value="irrevocable">Irrevocable Trust</option>
               </Select>
             </div>
+            
+            <div className="space-y-2">
+              <Label>Trust Name</Label>
+              <Input
+                value={selectedEntity.properties.trustName || ""}
+                onChange={(e) => handlePropertyChange("trustName", e.target.value)}
+                placeholder="Enter full trust name..."
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Grantor/Settlor</Label>
+              <Input
+                value={selectedEntity.properties.grantor || ""}
+                onChange={(e) => handlePropertyChange("grantor", e.target.value)}
+                placeholder="Enter grantor name..."
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Trustee</Label>
+              <Input
+                value={selectedEntity.properties.trustee || ""}
+                onChange={(e) => handlePropertyChange("trustee", e.target.value)}
+                placeholder="Enter trustee name..."
+              />
+            </div>
+            
+            <div className="space-y-3">
+              <Label>Assets to Include</Label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedEntity.properties.includeHome || false}
+                    onChange={(e) => handlePropertyChange("includeHome", e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Primary Residence</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedEntity.properties.includeInvestments || false}
+                    onChange={(e) => handlePropertyChange("includeInvestments", e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Investment Accounts</span>
+                </label>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Primary Beneficiary</Label>
+              <Input
+                value={selectedEntity.properties.primaryBeneficiary || ""}
+                onChange={(e) => handlePropertyChange("primaryBeneficiary", e.target.value)}
+                placeholder="Enter primary beneficiary..."
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Contingent Beneficiary</Label>
+              <Input
+                value={selectedEntity.properties.contingentBeneficiary || ""}
+                onChange={(e) => handlePropertyChange("contingentBeneficiary", e.target.value)}
+                placeholder="Enter contingent beneficiary..."
+              />
+            </div>
+            
+            <div className="space-y-3">
+              <Label>Privacy Options</Label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedEntity.properties.managerManagedLLC || false}
+                    onChange={(e) => handlePropertyChange("managerManagedLLC", e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">Use Manager-Managed LLC Structure</span>
+                </label>
+              </div>
+            </div>
+            
             <div className="space-y-2">
               <Label>State</Label>
               <Select
