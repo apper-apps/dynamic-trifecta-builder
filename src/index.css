@@ -179,7 +179,28 @@ body {
   .z-sidebar { z-index: 30; }
   .z-overlay { z-index: 40; }
   .z-modal { z-index: 50; }
-  .z-tooltip { z-index: 60; }
+.z-tooltip { z-index: 60; }
+  
+  /* Trifecta Model Section Styles */
+  .entity-asset {
+    @apply ring-2 ring-green-200 ring-opacity-50;
+  }
+  
+  .entity-operation {
+    @apply ring-2 ring-red-200 ring-opacity-50;
+  }
+  
+  .connection-trifecta {
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
+  }
+  
+  .section-assets {
+    @apply bg-gradient-to-br from-green-50 to-blue-50 border-green-200;
+  }
+  
+  .section-operations {
+    @apply bg-gradient-to-br from-red-50 to-orange-50 border-red-200;
+  }
   
   /* Layout utilities */
   .layout-container {

@@ -364,54 +364,111 @@ const renderConnection = (connection) => {
     const midX = (fromPos.x + toPos.x) / 2;
     const midY = (fromPos.y + toPos.y) / 2;
     
+    // Enhanced connection styling based on relationship type
     const isIncomeFlow = connection.type === "income";
-    const strokeColor = isIncomeFlow ? "#10B981" : "#6B7280";
-    const strokeDasharray = isIncomeFlow ? "8,4" : "none";
+    const isOwnership = connection.type === "ownership";
+    
+    let strokeColor = "#6B7280";
+    let strokeWidth = 3;
+    let strokeDasharray = "none";
+    
+    if (isIncomeFlow) {
+      strokeColor = "#10B981";
+      strokeWidth = 4;
+      strokeDasharray = "8,4";
+    } else if (isOwnership) {
+      strokeColor = "#2563EB";
+      strokeWidth = 3;
+      strokeDasharray = "none";
+    }
     
     // Validation indicator
     const isValid = validateConnection(connection.from, connection.to).length === 0;
     const validationColor = isValid ? strokeColor : "#EF4444";
+    
+    // Determine relationship strength for visual enhancement
+    const isAssetToOperation = 
+      (fromEntity.type === "Trust" || fromEntity.type === "LLC") &&
+      (toEntity.type === "SCorp" || toEntity.type === "Form1040");
+    
+    const enhancedStrokeWidth = isAssetToOperation ? strokeWidth + 1 : strokeWidth;
     
     return (
       <g key={connection.id}>
         <defs>
           <marker
             id={`arrowhead-${connection.id}`}
-            markerWidth="10"
-            markerHeight="7"
-            refX="9"
-            refY="3.5"
+            markerWidth="12"
+            markerHeight="8"
+            refX="10"
+            refY="4"
             orient="auto"
           >
             <polygon
-              points="0 0, 10 3.5, 0 7"
+              points="0 0, 12 4, 0 8"
               fill={validationColor}
             />
           </marker>
+          
+          {/* Enhanced glow effect for important connections */}
+          <filter id={`glow-${connection.id}`}>
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge> 
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
         </defs>
         
         <path
           d={`M ${fromPos.x} ${fromPos.y} Q ${midX} ${midY - 50} ${toPos.x} ${toPos.y}`}
           stroke={validationColor}
-          strokeWidth="2"
+          strokeWidth={enhancedStrokeWidth}
           strokeDasharray={!isValid ? "4,4" : strokeDasharray}
           fill="none"
           markerEnd={`url(#arrowhead-${connection.id})`}
+          filter={isAssetToOperation ? `url(#glow-${connection.id})` : "none"}
           className={`hover:stroke-blue-500 cursor-pointer transition-all duration-200 ${
             isIncomeFlow ? 'animate-pulse-slow' : ''
-          } ${!isValid ? 'opacity-60' : ''}`}
+          } ${!isValid ? 'opacity-60' : ''} ${
+            isAssetToOperation ? 'connection-trifecta' : ''
+          }`}
           onClick={() => handleConnectionClick(connection)}
+        />
+        
+        {/* Enhanced connection label with background */}
+        <rect
+          x={midX - 35}
+          y={midY - 35}
+          width="70"
+          height="20"
+          fill="white"
+          stroke={validationColor}
+          strokeWidth="1"
+          rx="10"
+          className="opacity-90 shadow-sm"
         />
         
         <text
           x={midX}
-          y={midY - 25}
+          y={midY - 22}
           textAnchor="middle"
-          className="text-sm font-medium pointer-events-none"
+          className="text-sm font-bold pointer-events-none"
           fill={validationColor}
         >
           {connection.label}
         </text>
+        
+        {/* Connection type indicator */}
+        <circle
+          cx={midX}
+          cy={midY + 10}
+          r="4"
+          fill={validationColor}
+          className="opacity-80"
+        >
+          <title>{isIncomeFlow ? "Income Flow" : isOwnership ? "Ownership" : "Connection"}</title>
+        </circle>
         
         {!isValid && (
           <circle

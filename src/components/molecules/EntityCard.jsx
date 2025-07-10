@@ -11,14 +11,16 @@ const EntityCard = ({
   isDragging,
   ...props 
 }) => {
-  const entityConfig = {
+const entityConfig = {
     Trust: {
       color: "trust",
       bgColor: "bg-trust",
       borderColor: "border-trust",
       textColor: "text-white",
       icon: "Shield",
-      gradient: "from-trust to-green-600"
+      gradient: "from-trust to-green-600",
+      category: "asset",
+      categoryLabel: "Asset Protection"
     },
     LLC: {
       color: "llc",
@@ -26,7 +28,9 @@ const EntityCard = ({
       borderColor: "border-llc",
       textColor: "text-white",
       icon: "Building2",
-      gradient: "from-llc to-blue-600"
+      gradient: "from-llc to-blue-600",
+      category: "asset",
+      categoryLabel: "Asset Holdings"
     },
     SCorp: {
       color: "scorp",
@@ -34,7 +38,9 @@ const EntityCard = ({
       borderColor: "border-scorp",
       textColor: "text-white",
       icon: "Briefcase",
-      gradient: "from-scorp to-red-600"
+      gradient: "from-scorp to-red-600",
+      category: "operation",
+      categoryLabel: "Business Operations"
     },
     Form1040: {
       color: "form1040",
@@ -42,7 +48,9 @@ const EntityCard = ({
       borderColor: "border-form1040",
       textColor: "text-white",
       icon: "FileText",
-      gradient: "from-form1040 to-gray-600"
+      gradient: "from-form1040 to-gray-600",
+      category: "operation",
+      categoryLabel: "Tax Filing"
     }
   };
 
@@ -78,12 +86,13 @@ const handleMouseLeave = () => {
       exit={{ opacity: 0, scale: 0.8 }}
 whileHover={{ scale: isDragging ? 1.0 : 1.08, y: isDragging ? 0 : -5 }}
       whileTap={{ scale: 0.95 }}
-      className={cn(
+className={cn(
         "entity-card w-48 bg-white border-2 cursor-move select-none transition-all duration-300 shadow-lg hover:shadow-2xl",
         isSelected && "ring-4 ring-blue-500 ring-offset-2 shadow-blue-500/25",
         isDragging && "opacity-90 rotate-3 scale-105 shadow-2xl z-50 ring-2 ring-purple-400 border-purple-400",
         isHovered && !isDragging && "shadow-xl transform scale-105",
-        config.borderColor
+        config.borderColor,
+        config.category === "asset" ? "entity-asset" : "entity-operation"
       )}
       onClick={onSelect}
       onMouseEnter={handleMouseEnter}
@@ -124,8 +133,16 @@ whileHover={{ scale: isDragging ? 1.0 : 1.08, y: isDragging ? 0 : -5 }}
         </div>
       </div>
       
-      <div className="p-4 bg-gradient-to-b from-white to-gray-50">
-        <h3 className="font-bold text-gray-900 mb-2 text-lg">{entity.name}</h3>
+<div className="p-4 bg-gradient-to-b from-white to-gray-50">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-bold text-gray-900 text-lg">{entity.name}</h3>
+          <span className={cn(
+            "text-xs px-2 py-1 rounded-full font-semibold",
+            config.category === "asset" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+          )}>
+            {config.categoryLabel}
+          </span>
+        </div>
         <div className="space-y-1 text-sm text-gray-700">
           {entity.properties.description && (
             <p className="font-medium">{entity.properties.description}</p>

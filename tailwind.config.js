@@ -24,6 +24,8 @@ animation: {
         'float': 'float 3s ease-in-out infinite',
         'pulse-slow': 'pulse 3s ease-in-out infinite',
         'dash': 'dash 2s linear infinite',
+        'connection-flow': 'connection-flow 3s ease-in-out infinite',
+        'trifecta-glow': 'trifecta-glow 2s ease-in-out infinite alternate',
       },
       keyframes: {
         float: {
@@ -32,6 +34,14 @@ animation: {
         },
         dash: {
           'to': { 'stroke-dashoffset': '-12' },
+        },
+        'connection-flow': {
+          '0%, 100%': { strokeDashoffset: '0' },
+          '50%': { strokeDashoffset: '20' },
+        },
+        'trifecta-glow': {
+          '0%': { filter: 'drop-shadow(0 0 5px rgba(59, 130, 246, 0.3))' },
+          '100%': { filter: 'drop-shadow(0 0 15px rgba(59, 130, 246, 0.6))' },
         }
       }
     },

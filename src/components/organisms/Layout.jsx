@@ -1,12 +1,13 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import ComponentToolbar from "@/components/molecules/ComponentToolbar";
-import AIChat from "@/components/molecules/AIChat";
-import ExportControls from "@/components/molecules/ExportControls";
-import PropertiesPanel from "@/components/molecules/PropertiesPanel";
-import Button from "@/components/atoms/Button";
 import ApperIcon from "@/components/ApperIcon";
-
+import Button from "@/components/atoms/Button";
+import AIChat from "@/components/molecules/AIChat";
+import PropertiesPanel from "@/components/molecules/PropertiesPanel";
+import ComponentToolbar from "@/components/molecules/ComponentToolbar";
+import ExportControls from "@/components/molecules/ExportControls";
+import connectionsData from "@/services/mockData/connections.json";
+import entitiesData from "@/services/mockData/entities.json";
 const Layout = ({ 
   children, 
   onAddEntity,
@@ -27,23 +28,23 @@ return (
       <motion.div 
         initial={false}
         animate={{ width: leftSidebarOpen ? 320 : 0 }}
-        className="hidden lg:block bg-white border-r border-gray-200 overflow-hidden shadow-lg"
+className="hidden lg:block bg-white border-r border-gray-200 overflow-hidden shadow-lg"
         role="complementary"
-        aria-label="Component library and tools"
+        aria-label="Assets section - Trust and LLC components"
       >
         <div className="p-6 w-80">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <motion.div 
-                className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg"
+                className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg"
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 transition={{ duration: 0.2 }}
               >
-                <ApperIcon name="Layers" size={24} className="text-white" />
+                <ApperIcon name="Shield" size={24} className="text-white" />
               </motion.div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Trifecta Builder</h1>
-                <p className="text-sm text-blue-600 font-medium">Tax Strategy Designer</p>
+                <h1 className="text-xl font-bold text-gray-900">Assets</h1>
+                <p className="text-sm text-green-600 font-medium">Protection & Holdings</p>
               </div>
             </div>
             <Button
@@ -51,38 +52,37 @@ return (
               size="sm"
               onClick={() => setLeftSidebarOpen(false)}
               className="lg:hidden touch-target"
-              aria-label="Close sidebar"
+              aria-label="Close assets sidebar"
             >
               <ApperIcon name="X" size={20} />
             </Button>
           </div>
-          
-          <ComponentToolbar onAddEntity={onAddEntity} />
+<ComponentToolbar onAddEntity={onAddEntity} sectionType="assets" />
         </div>
       </motion.div>
 
-{/* Mobile Left Sidebar Overlay */}
+      {/* Mobile Left Sidebar Overlay */}
       <motion.div
         initial={false}
         animate={{ x: leftSidebarOpen ? 0 : -320 }}
         className="lg:hidden fixed inset-y-0 left-0 z-50 w-80 bg-white border-r border-gray-200 shadow-2xl"
         role="dialog"
         aria-modal="true"
-        aria-label="Mobile component library"
+aria-label="Mobile component library"
       >
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
               <motion.div 
-                className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg"
+                className="w-10 h-10 bg-gradient-to-br from-green-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg"
                 whileHover={{ scale: 1.1, rotate: 5 }}
                 transition={{ duration: 0.2 }}
               >
-                <ApperIcon name="Layers" size={24} className="text-white" />
+                <ApperIcon name="Shield" size={24} className="text-white" />
               </motion.div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Trifecta Builder</h1>
-                <p className="text-sm text-blue-600 font-medium">Tax Strategy Designer</p>
+                <h1 className="text-xl font-bold text-gray-900">Assets</h1>
+                <p className="text-sm text-green-600 font-medium">Protection & Holdings</p>
               </div>
             </div>
             <Button
@@ -90,40 +90,39 @@ return (
               size="sm"
               onClick={() => setLeftSidebarOpen(false)}
               className="touch-target"
-              aria-label="Close mobile sidebar"
+              aria-label="Close mobile assets sidebar"
             >
               <ApperIcon name="X" size={20} />
             </Button>
           </div>
           
-          <ComponentToolbar onAddEntity={onAddEntity} />
+          <ComponentToolbar onAddEntity={onAddEntity} sectionType="assets" />
         </div>
       </motion.div>
-
 {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header 
+        <header
           className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm"
           role="banner"
         >
           <div className="flex items-center gap-3">
             <Button
-              variant="ghost"
-              size="sm"
+size="sm"
               onClick={() => setLeftSidebarOpen(true)}
               className="lg:hidden touch-target"
-              aria-label="Open component library"
+              aria-label="Open assets section"
+            >
             >
               <ApperIcon name="Menu" size={20} />
             </Button>
             
             <Button
               variant="ghost"
-              size="sm"
+size="sm"
               onClick={() => setLeftSidebarOpen(!leftSidebarOpen)}
               className="hidden lg:flex touch-target"
-              aria-label={leftSidebarOpen ? "Hide component library" : "Show component library"}
+              aria-label={leftSidebarOpen ? "Hide assets section" : "Show assets section"}
             >
               <ApperIcon name="PanelLeft" size={20} />
             </Button>
@@ -143,17 +142,18 @@ return (
           
           <div className="flex items-center gap-2">
             <Button
-              variant="ghost"
+variant="ghost"
               size="sm"
               onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
               className="touch-target"
-              aria-label={rightSidebarOpen ? "Hide assistant panel" : "Show assistant panel"}
+              aria-label={rightSidebarOpen ? "Hide operations panel" : "Show operations panel"}
             >
               <ApperIcon name="PanelRight" size={20} />
             </Button>
-          </div>
+</div>
         </header>
-{/* Canvas Area */}
+        
+        {/* Canvas Area */}
         <main className="flex-1 p-4 relative overflow-hidden" role="main">
           <div className="h-full w-full">
             {children}
@@ -165,53 +165,24 @@ return (
       <motion.div 
         initial={false}
         animate={{ width: rightSidebarOpen ? 320 : 0 }}
-        className="hidden lg:block bg-white border-l border-gray-200 overflow-hidden"
+className="hidden lg:block bg-white border-l border-gray-200 overflow-hidden"
       >
         <div className="p-6 w-80 space-y-6">
-          <AIChat 
-            suggestions={suggestions}
-            entities={entities}
-            connections={connections}
-          />
-          
-<ExportControls 
-            entities={entities}
-            connections={connections}
-            canvasRef={canvasRef}
-          />
-          
-          {selectedEntity && (
-            <PropertiesPanel
-              selectedEntity={selectedEntity}
-              onUpdateEntity={onUpdateEntity}
-              onClose={onDeselectEntity}
-            />
-          )}
-        </div>
-      </motion.div>
-
-{/* Mobile Right Sidebar Overlay */}
-      <motion.div
-        initial={false}
-        animate={{ x: rightSidebarOpen ? 0 : 320 }}
-        className="lg:hidden fixed inset-y-0 right-0 z-50 w-80 bg-white border-l border-gray-200 shadow-xl"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Mobile assistant panel"
-      >
-        <div className="p-6 space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">Assistant</h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setRightSidebarOpen(false)}
-              className="touch-target"
-              aria-label="Close mobile assistant panel"
+          <div className="flex items-center gap-3 mb-6">
+            <motion.div
+              className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg"
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              transition={{ duration: 0.2 }}
             >
-              <ApperIcon name="X" size={20} />
-            </Button>
+              <ApperIcon name="Briefcase" size={24} className="text-white" />
+            </motion.div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Operations</h2>
+              <p className="text-sm text-red-600 font-medium">Business & Tax Filing</p>
+            </div>
           </div>
+          
+          <ComponentToolbar onAddEntity={onAddEntity} sectionType="operations" />
           
           <AIChat 
             suggestions={suggestions}
@@ -234,7 +205,61 @@ return (
           )}
         </div>
       </motion.div>
-
+{/* Mobile Right Sidebar Overlay */}
+      <motion.div
+        initial={false}
+        animate={{ x: rightSidebarOpen ? 0 : 320 }}
+        className="lg:hidden fixed inset-y-0 right-0 z-50 w-80 bg-white border-l border-gray-200 shadow-xl"
+        role="dialog"
+aria-modal="true"
+        aria-label="Mobile operations panel"
+      >
+        <div className="p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <motion.div 
+                className="w-8 h-8 bg-gradient-to-br from-red-500 to-orange-600 rounded-lg flex items-center justify-center shadow-lg"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ApperIcon name="Briefcase" size={20} className="text-white" />
+              </motion.div>
+              <h2 className="text-lg font-semibold text-gray-900">Operations</h2>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setRightSidebarOpen(false)}
+              className="touch-target"
+              aria-label="Close mobile operations panel"
+            >
+              <ApperIcon name="X" size={20} />
+            </Button>
+          </div>
+          
+          <ComponentToolbar onAddEntity={onAddEntity} sectionType="operations" />
+          
+          <AIChat 
+            suggestions={suggestions}
+            entities={entities}
+            connections={connections}
+          />
+          
+          <ExportControls 
+            entities={entities}
+            connections={connections}
+            canvasRef={canvasRef}
+          />
+          
+          {selectedEntity && (
+            <PropertiesPanel
+              selectedEntity={selectedEntity}
+              onUpdateEntity={onUpdateEntity}
+              onClose={onDeselectEntity}
+            />
+          )}
+        </div>
+      </motion.div>
 {/* Mobile Overlay */}
       {(leftSidebarOpen || rightSidebarOpen) && (
         <div

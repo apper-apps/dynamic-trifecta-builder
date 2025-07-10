@@ -4,39 +4,56 @@ import ApperIcon from "@/components/ApperIcon";
 import Button from "@/components/atoms/Button";
 import Card from "@/components/atoms/Card";
 
-const ComponentToolbar = ({ onAddEntity }) => {
-  const entityTypes = [
+const ComponentToolbar = ({ onAddEntity, sectionType = "all" }) => {
+const assetTypes = [
     {
       type: "Trust",
       icon: "Shield",
       color: "trust",
       description: "Revocable Living Trust",
-      gradient: "from-trust to-green-600"
+      gradient: "from-trust to-green-600",
+      category: "Asset Protection"
     },
     {
       type: "LLC",
       icon: "Building2",
       color: "llc",
       description: "Limited Liability Company",
-      gradient: "from-llc to-blue-600"
-    },
+      gradient: "from-llc to-blue-600",
+      category: "Asset Holdings"
+    }
+  ];
+
+  const operationTypes = [
     {
       type: "SCorp",
       icon: "Briefcase",
       color: "scorp",
       description: "S Corporation",
-      gradient: "from-scorp to-red-600"
+      gradient: "from-scorp to-red-600",
+      category: "Business Operations"
     },
     {
       type: "Form1040",
       icon: "FileText",
       color: "form1040",
       description: "Individual Tax Return",
-      gradient: "from-form1040 to-gray-600"
+      gradient: "from-form1040 to-gray-600",
+      category: "Tax Filing"
     }
   ];
 
-const [hoveredEntity, setHoveredEntity] = React.useState(null);
+  const allEntityTypes = [...assetTypes, ...operationTypes];
+  
+  const getEntityTypes = () => {
+    switch(sectionType) {
+      case "assets": return assetTypes;
+      case "operations": return operationTypes;
+      default: return allEntityTypes;
+    }
+  };
+
+  const [hoveredEntity, setHoveredEntity] = React.useState(null);
 
   const entityTooltips = {
     Trust: "Asset protection vault - like a security blanket for your stuff! 🛡️",
@@ -44,7 +61,6 @@ const [hoveredEntity, setHoveredEntity] = React.useState(null);
     SCorp: "Tax-smart business structure - pays you a salary AND profits! 💼",
     Form1040: "Your personal tax blender - where all income gets mixed! 📋"
   };
-
 const handleMouseEnter = (entityType, event) => {
     setHoveredEntity({ type: entityType, element: event.currentTarget });
   };
@@ -53,6 +69,35 @@ const handleMouseEnter = (entityType, event) => {
     setHoveredEntity(null);
   };
 
+const getSectionConfig = () => {
+    switch(sectionType) {
+      case "assets":
+        return {
+          title: "Asset Components",
+          icon: "Shield",
+          color: "text-green-600",
+          description: "Protection & Holdings"
+        };
+      case "operations":
+        return {
+          title: "Operation Components", 
+          icon: "Briefcase",
+          color: "text-red-600",
+          description: "Business & Tax Filing"
+        };
+      default:
+        return {
+          title: "All Components",
+          icon: "Layers",
+          color: "text-blue-600",
+          description: "Full Trifecta Model"
+        };
+    }
+  };
+
+  const sectionConfig = getSectionConfig();
+  const entityTypes = getEntityTypes();
+
   return (
     <Card className="p-6 h-fit shadow-xl">
       <div className="flex items-center gap-2 mb-4">
@@ -60,9 +105,12 @@ const handleMouseEnter = (entityType, event) => {
           animate={{ rotate: [0, 360] }}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
         >
-          <ApperIcon name="Layers" size={20} className="text-blue-600" />
+          <ApperIcon name={sectionConfig.icon} size={20} className={sectionConfig.color} />
         </motion.div>
-        <h2 className="text-lg font-semibold text-gray-900">Components</h2>
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">{sectionConfig.title}</h2>
+          <p className="text-xs text-gray-600 font-medium">{sectionConfig.description}</p>
+        </div>
       </div>
       
       <div className="space-y-3">
@@ -130,11 +178,12 @@ const handleMouseEnter = (entityType, event) => {
         ))}
       </div>
       
-      <motion.div 
-        className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg border-2 border-blue-300 shadow-md"
-        whileHover={{ scale: 1.02 }}
-        transition={{ duration: 0.2 }}
-      >
+{sectionType === "all" && (
+        <motion.div 
+          className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg border-2 border-blue-300 shadow-md"
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.2 }}
+        >
         <div className="flex items-start gap-2">
           <motion.div
             animate={{ rotate: [0, 20, 0] }}
@@ -146,8 +195,51 @@ const handleMouseEnter = (entityType, event) => {
             <p className="font-bold mb-1">Pro Tip from Mark Kohler!</p>
             <p className="font-medium">Drag components to the canvas or click to add. Connect entities to show relationships and watch the magic happen! ✨</p>
           </div>
-        </div>
-      </motion.div>
+</div>
+        </motion.div>
+      )}
+      
+      {sectionType === "assets" && (
+        <motion.div 
+          className="mt-6 p-4 bg-gradient-to-br from-green-50 to-blue-100 rounded-lg border-2 border-green-300 shadow-md"
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.2 }}
+        >
+          <div className="flex items-start gap-2">
+            <motion.div
+              animate={{ rotate: [0, 20, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <ApperIcon name="Shield" size={16} className="text-green-600 mt-0.5" />
+            </motion.div>
+            <div className="text-sm text-green-900">
+              <p className="font-bold mb-1">Asset Protection Focus</p>
+              <p className="font-medium">Build the foundation of your Trifecta with protective structures! 🛡️</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+      
+      {sectionType === "operations" && (
+        <motion.div 
+          className="mt-6 p-4 bg-gradient-to-br from-red-50 to-orange-100 rounded-lg border-2 border-red-300 shadow-md"
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.2 }}
+        >
+          <div className="flex items-start gap-2">
+            <motion.div
+              animate={{ rotate: [0, 20, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <ApperIcon name="Briefcase" size={16} className="text-red-600 mt-0.5" />
+            </motion.div>
+            <div className="text-sm text-red-900">
+              <p className="font-bold mb-1">Operations Excellence</p>
+              <p className="font-medium">Power your business and optimize your tax strategy! 💼</p>
+            </div>
+          </div>
+        </motion.div>
+      )}
     </Card>
   );
 };
