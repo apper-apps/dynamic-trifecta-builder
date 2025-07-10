@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import Layout from "@/components/organisms/Layout";
 import Canvas from "@/components/organisms/Canvas";
+import Layout from "@/components/organisms/Layout";
+import Empty from "@/components/ui/Empty";
+import Error from "@/components/ui/Error";
+import Loading from "@/components/ui/Loading";
 import EntityService from "@/services/api/EntityService";
 import ConnectionService from "@/services/api/ConnectionService";
 import AIService from "@/services/api/AIService";
-import Loading from "@/components/ui/Loading";
-import Error from "@/components/ui/Error";
-import Empty from "@/components/ui/Empty";
 
 const CanvasPage = () => {
   const [entities, setEntities] = useState([]);
@@ -141,12 +141,26 @@ const handleAddEntity = async (type, customPosition = null) => {
     } catch (err) {
       toast.error("Failed to delete connection");
     }
+}
+  };
+
+  const handleSuggestionAction = async (suggestion) => {
+    try {
+      if (suggestion.type === 'add_entity') {
+        await handleAddEntity(suggestion.entityType, suggestion.position);
+      } else if (suggestion.type === 'add_connection') {
+        await handleAddConnection(suggestion.connectionData);
+      } else if (suggestion.type === 'optimize_structure') {
+        toast.info(suggestion.message || 'Optimization suggestion applied');
+      }
+    } catch (err) {
+      toast.error('Failed to apply suggestion');
+    }
   };
 
   const handleDeselectEntity = () => {
     setSelectedEntity(null);
   };
-
   if (loading) {
     return <Loading message="Loading your Trifecta structure..." />;
   }
@@ -162,7 +176,7 @@ const handleAddEntity = async (type, customPosition = null) => {
   }
 
   return (
-    <Layout
+<Layout
       onAddEntity={handleAddEntity}
       suggestions={suggestions}
       entities={entities}
@@ -170,6 +184,7 @@ const handleAddEntity = async (type, customPosition = null) => {
       selectedEntity={selectedEntity}
       onUpdateEntity={handleUpdateEntity}
       onDeselectEntity={handleDeselectEntity}
+      onSuggestionAction={handleSuggestionAction}
     >
       {entities.length === 0 ? (
         <Empty

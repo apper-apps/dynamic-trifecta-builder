@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import Card from "@/components/atoms/Card";
+import { AnimatePresence, motion } from "framer-motion";
 import ApperIcon from "@/components/ApperIcon";
+import Card from "@/components/atoms/Card";
 
 const AIChat = ({ suggestions, entities, connections }) => {
   const chatRef = useRef(null);
@@ -12,6 +12,28 @@ const AIChat = ({ suggestions, entities, connections }) => {
     }
   }, [suggestions]);
 
+  const handleActionClick = (suggestion, action) => {
+    try {
+      switch (action.type) {
+        case "create_entity":
+          console.log("Creating entity:", action.data);
+          // Handle entity creation logic here
+          break;
+        case "create_connection":
+          console.log("Creating connection:", action.data);
+          // Handle connection creation logic here
+          break;
+        case "show_info":
+          console.log("Showing info:", action.data);
+          // Handle info display logic here
+          break;
+        default:
+          console.log("Unknown action type:", action.type);
+      }
+    } catch (error) {
+      console.error("Error handling action:", error);
+    }
+  };
   const getSuggestionIcon = (type) => {
     switch (type) {
       case "tip":
@@ -71,7 +93,7 @@ const AIChat = ({ suggestions, entities, connections }) => {
                 className="ai-bubble"
               >
                 <div className="flex items-start gap-2">
-                  <ApperIcon
+<ApperIcon
                     name={getSuggestionIcon(suggestion.type)}
                     size={16}
                     className={`mt-1 ${getSuggestionColor(suggestion.type)}`}
@@ -80,6 +102,25 @@ const AIChat = ({ suggestions, entities, connections }) => {
                     <p className="text-sm text-gray-800 leading-relaxed">
                       {suggestion.message}
                     </p>
+                    
+                    {suggestion.actions && suggestion.actions.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {suggestion.actions.map((action) => (
+                          <button
+                            key={action.id}
+                            onClick={() => handleActionClick(suggestion, action)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors duration-200"
+                          >
+                            <ApperIcon 
+                              name={action.type === "create_entity" ? "Plus" : "Info"} 
+                              size={12} 
+                            />
+                            {action.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
                     {suggestion.type === "warning" && (
                       <div className="mt-2 text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded">
                         <ApperIcon name="AlertTriangle" size={12} className="inline mr-1" />
