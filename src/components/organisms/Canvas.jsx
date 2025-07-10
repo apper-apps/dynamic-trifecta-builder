@@ -359,10 +359,11 @@ return (
       role="application"
       aria-label="Canvas for building tax and asset protection structures"
       tabIndex="0"
+      style={{ minHeight: '100%' }}
     >
-      {/* Validation Error Display */}
+{/* Validation Error Display */}
       {validationErrors.length > 0 && (
-        <div className="absolute top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg z-50 max-w-xs">
+        <div className="absolute top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg z-30 max-w-xs">
           <div className="flex items-center gap-2 mb-2">
             <ApperIcon name="AlertCircle" size={16} />
             <span className="font-semibold">Validation Error</span>

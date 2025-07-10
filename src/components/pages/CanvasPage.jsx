@@ -212,7 +212,7 @@ const handleDeleteConnection = async (id) => {
 
 return (
     <div 
-      className="h-screen" 
+      className="h-screen flex flex-col" 
       role="application" 
       aria-label="Trifecta Tax Strategy Builder"
     >

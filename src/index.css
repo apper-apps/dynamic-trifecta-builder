@@ -153,7 +153,7 @@ body {
     50% { opacity: 0.7; stroke-width: 4; }
   }
   
-  /* Touch-friendly interactions */
+/* Touch-friendly interactions */
   .touch-target {
     min-width: 44px;
     min-height: 44px;
@@ -173,6 +173,29 @@ body {
   .reduced-motion * {
     animation: none !important;
     transition: none !important;
+  }
+  
+  /* Z-index management */
+  .z-sidebar { z-index: 30; }
+  .z-overlay { z-index: 40; }
+  .z-modal { z-index: 50; }
+  .z-tooltip { z-index: 60; }
+  
+  /* Layout utilities */
+  .layout-container {
+    @apply flex flex-col h-screen overflow-hidden;
+  }
+  
+  .layout-main {
+    @apply flex-1 flex overflow-hidden;
+  }
+  
+  .layout-sidebar {
+    @apply flex-shrink-0 overflow-y-auto;
+  }
+  
+  .layout-content {
+    @apply flex-1 overflow-hidden;
   }
 }
 /* Enhanced accessibility classes */

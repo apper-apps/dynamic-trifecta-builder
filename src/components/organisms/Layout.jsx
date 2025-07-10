@@ -153,10 +153,11 @@ return (
             </Button>
           </div>
         </header>
-        
-        {/* Canvas Area */}
-        <main className="flex-1 p-4" role="main">
-          {children}
+{/* Canvas Area */}
+        <main className="flex-1 p-4 relative overflow-hidden" role="main">
+          <div className="h-full w-full">
+            {children}
+          </div>
         </main>
       </div>
 
@@ -189,11 +190,14 @@ return (
         </div>
       </motion.div>
 
-      {/* Mobile Right Sidebar Overlay */}
+{/* Mobile Right Sidebar Overlay */}
       <motion.div
         initial={false}
         animate={{ x: rightSidebarOpen ? 0 : 320 }}
         className="lg:hidden fixed inset-y-0 right-0 z-50 w-80 bg-white border-l border-gray-200 shadow-xl"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Mobile assistant panel"
       >
         <div className="p-6 space-y-6">
           <div className="flex items-center justify-between">
@@ -202,6 +206,8 @@ return (
               variant="ghost"
               size="sm"
               onClick={() => setRightSidebarOpen(false)}
+              className="touch-target"
+              aria-label="Close mobile assistant panel"
             >
               <ApperIcon name="X" size={20} />
             </Button>
@@ -213,7 +219,7 @@ return (
             connections={connections}
           />
           
-<ExportControls 
+          <ExportControls 
             entities={entities}
             connections={connections}
             canvasRef={canvasRef}
@@ -229,13 +235,22 @@ return (
         </div>
       </motion.div>
 
-      {/* Mobile Overlay */}
+{/* Mobile Overlay */}
       {(leftSidebarOpen || rightSidebarOpen) && (
         <div
           className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={() => {
             setLeftSidebarOpen(false);
             setRightSidebarOpen(false);
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Close mobile panels"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+              setLeftSidebarOpen(false);
+              setRightSidebarOpen(false);
+            }
           }}
         />
       )}
