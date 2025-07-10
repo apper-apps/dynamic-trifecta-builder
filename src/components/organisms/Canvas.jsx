@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState, forwardRef } from "react";
+import React, { forwardRef, useCallback, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import ApperIcon from "@/components/ApperIcon";
 import Error from "@/components/ui/Error";
@@ -492,7 +492,7 @@ return (
         isDragOver ? 'border-blue-500 bg-blue-50 shadow-blue-500/20' : 'border-gray-300'
       } ${validDropZone ? 'shadow-lg' : 'border-red-500 bg-red-50 shadow-red-500/20'}`}
       onMouseMove={handleMouseMove}
-      onMouseUp={handleMouseUp}
+onMouseUp={handleMouseUp}
       onClick={handleCanvasClick}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}

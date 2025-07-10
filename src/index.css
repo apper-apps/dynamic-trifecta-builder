@@ -242,6 +242,22 @@ body {
   filter: brightness(1.1);
 }
 
+/* Improved drag feedback */
+.drag-handle {
+  cursor: grab;
+  transition: all 0.2s ease;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  transform: scale(1.05);
+}
+
+.drag-handle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
 /* Playful animations */
 @keyframes bounce-in {
   0% { transform: scale(0.8) translateY(20px); opacity: 0; }
@@ -262,6 +278,26 @@ body {
 .wiggle {
   animation: wiggle 0.5s ease-in-out;
 }
+
+/* Enhanced canvas grid */
+.canvas-grid {
+  background-image: 
+    linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+    radial-gradient(circle, rgba(59, 130, 246, 0.15) 1px, transparent 1px);
+  background-size: 20px 20px, 20px 20px, 60px 60px;
+  background-position: 0 0, 0 0, 10px 10px;
+}
+
+/* Floating panel styles */
+.floating-panel {
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Enhanced z-index management */
+.z-floating { z-index: 60; }
+.z-backdrop { z-index: 50; }
 
 /* React Toastify Overrides */
 .Toastify__toast-container {

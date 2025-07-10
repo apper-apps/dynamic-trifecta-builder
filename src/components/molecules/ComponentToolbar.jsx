@@ -163,7 +163,7 @@ const getSectionConfig = () => {
                   initial={{ opacity: 0, y: 10, scale: 0.8 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.8 }}
-                  className="absolute z-50 left-full ml-2 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg max-w-xs pointer-events-none"
+                  className="absolute z-50 left-full ml-2 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-xl max-w-xs pointer-events-none"
                   role="tooltip"
                   aria-live="polite"
                 >
