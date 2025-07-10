@@ -100,8 +100,8 @@ const [draggedEntity, setDraggedEntity] = useState(null);
 const handleMouseDown = useCallback((e, entity) => {
     if (e.target.closest(".connection-handle")) return;
     
-    // Prevent null reference error
-    if (!canvasRef.current) return;
+    // Prevent null reference error and ensure canvas is available
+    if (!canvasRef.current || !e.currentTarget) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
     const entityRect = e.currentTarget.getBoundingClientRect();
@@ -115,13 +115,14 @@ const handleMouseDown = useCallback((e, entity) => {
       y: e.clientY - entityRect.top
     });
     onSelectEntity(entity);
-  }, [onSelectEntity, entities, connections]);
+    
+    // Add mouse move and up listeners to document for better tracking
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [onSelectEntity]);
 
 const handleMouseMove = useCallback((e) => {
-    if (!draggedEntity) return;
-    
-    // Prevent null reference error
-    if (!canvasRef.current) return;
+    if (!draggedEntity || !canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
     const newPosition = {
@@ -132,35 +133,69 @@ const handleMouseMove = useCallback((e) => {
     // Snap to grid
     const snappedPosition = snapToGrid(newPosition);
     
-    // Constrain to canvas bounds
-    snappedPosition.x = Math.max(0, Math.min(rect.width - 200, snappedPosition.x));
-    snappedPosition.y = Math.max(0, Math.min(rect.height - 150, snappedPosition.y));
+    // Constrain to canvas bounds with better edge handling
+    const entityWidth = 200;
+    const entityHeight = 150;
+    snappedPosition.x = Math.max(0, Math.min(rect.width - entityWidth, snappedPosition.x));
+    snappedPosition.y = Math.max(0, Math.min(rect.height - entityHeight, snappedPosition.y));
     
-    // Real-time validation
+    // Real-time validation with immediate feedback
     const errors = validateEntityPosition(draggedEntity, snappedPosition);
     setValidationErrors(errors);
     setValidDropZone(errors.length === 0);
     
+    // Update entity position immediately for smooth dragging
     onUpdateEntity(draggedEntity.id, {
       ...draggedEntity,
       position: snappedPosition
     });
   }, [draggedEntity, dragOffset, onUpdateEntity, entities]);
-
-  const handleMouseUp = useCallback(() => {
+const handleMouseUp = useCallback(() => {
     setDraggedEntity(null);
     setDragOffset({ x: 0, y: 0 });
-  }, []);
-
-  // Handle drag from library
+    setValidationErrors([]);
+    setValidDropZone(true);
+    
+    // Clean up event listeners
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  }, [handleMouseMove]);
+// Handle drag from library with enhanced validation
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
     setIsDragOver(true);
-  }, []);
+    
+    // Visual feedback for valid drop zone
+    const entityType = e.dataTransfer.getData("text/plain");
+    if (entityType && canvasRef.current) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      const dropPosition = {
+        x: e.clientX - rect.left - 100,
+        y: e.clientY - rect.top - 75
+      };
+      
+      const snappedPosition = snapToGrid(dropPosition);
+      snappedPosition.x = Math.max(0, Math.min(rect.width - 200, snappedPosition.x));
+      snappedPosition.y = Math.max(0, Math.min(rect.height - 150, snappedPosition.y));
+      
+      const tempEntity = { id: 'temp', type: entityType, position: snappedPosition };
+      const errors = validateEntityPosition(tempEntity, snappedPosition);
+      
+      if (entityType === "Form1040" && entities.some(e => e.type === "Form1040")) {
+        errors.push("Only one Form 1040 allowed per structure");
+      }
+      
+      setValidDropZone(errors.length === 0);
+      setValidationErrors(errors);
+    }
+  }, [entities, validateEntityPosition]);
 
   const handleDragLeave = useCallback((e) => {
     if (!canvasRef.current?.contains(e.relatedTarget)) {
       setIsDragOver(false);
+      setValidDropZone(true);
+      setValidationErrors([]);
     }
   }, []);
 
@@ -169,10 +204,7 @@ const handleDrop = useCallback((e) => {
     setIsDragOver(false);
     
     const entityType = e.dataTransfer.getData("text/plain");
-    if (entityType && onAddEntity) {
-      // Prevent null reference error
-      if (!canvasRef.current) return;
-      
+    if (entityType && onAddEntity && canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
       const dropPosition = {
         x: e.clientX - rect.left - 100, // Center the entity
@@ -202,14 +234,52 @@ const handleDrop = useCallback((e) => {
       
       onAddEntity(entityType, snappedPosition);
     }
+    
+    // Clean up drag state
+    setValidDropZone(true);
+    setValidationErrors([]);
   }, [onAddEntity, entities, validateEntityPosition]);
-
 const handleConnectionStart = (entityId, e) => {
     e.stopPropagation();
     setIsConnecting(true);
     setConnectionStart(entityId);
     setValidationErrors([]);
+    
+    // Add mouse tracking for connection preview
+    document.addEventListener('mousemove', handleConnectionPreview);
+    document.addEventListener('mouseup', handleConnectionCancel);
   };
+
+  const handleConnectionPreview = useCallback((e) => {
+    if (!isConnecting || !connectionStart || !canvasRef.current) return;
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const mousePos = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    };
+    
+    const startEntity = entities.find(e => e.id === connectionStart);
+    if (startEntity) {
+      setConnectionPreview({
+        from: {
+          x: startEntity.position.x + 96,
+          y: startEntity.position.y + 75
+        },
+        to: mousePos
+      });
+    }
+  }, [isConnecting, connectionStart, entities]);
+
+  const handleConnectionCancel = useCallback((e) => {
+    if (isConnecting && !e.target.closest('.connection-handle')) {
+      setIsConnecting(false);
+      setConnectionStart(null);
+      setConnectionPreview(null);
+      document.removeEventListener('mousemove', handleConnectionPreview);
+      document.removeEventListener('mouseup', handleConnectionCancel);
+    }
+  }, [isConnecting, handleConnectionPreview]);
 
   const handleConnectionEnd = (entityId, e) => {
     e.stopPropagation();
@@ -222,6 +292,7 @@ const handleConnectionStart = (entityId, e) => {
         setTimeout(() => setValidationErrors([]), 3000);
         setIsConnecting(false);
         setConnectionStart(null);
+        setConnectionPreview(null);
         return;
       }
       
@@ -244,9 +315,13 @@ const handleConnectionStart = (entityId, e) => {
         label: label
       });
     }
+    
+    // Clean up connection state
     setIsConnecting(false);
     setConnectionStart(null);
-    setTempConnection(null);
+    setConnectionPreview(null);
+    document.removeEventListener('mousemove', handleConnectionPreview);
+    document.removeEventListener('mouseup', handleConnectionCancel);
   };
 
 const handleCanvasClick = (e) => {
@@ -401,10 +476,10 @@ return (
             </feMerge>
           </filter>
         </defs>
-        {connections.map(renderConnection)}
+{connections.map(renderConnection)}
         
-        {/* Connection Preview */}
-        {isConnecting && connectionStart && (
+        {/* Enhanced Connection Preview */}
+        {isConnecting && connectionStart && connectionPreview && (
           <g>
             <defs>
               <marker
@@ -423,7 +498,7 @@ return (
               </marker>
             </defs>
             <path
-              d={`M ${entities.find(e => e.id === connectionStart)?.position.x + 96} ${entities.find(e => e.id === connectionStart)?.position.y + 75} L ${entities.find(e => e.id === connectionStart)?.position.x + 96} ${entities.find(e => e.id === connectionStart)?.position.y + 75}`}
+              d={`M ${connectionPreview.from.x} ${connectionPreview.from.y} L ${connectionPreview.to.x} ${connectionPreview.to.y}`}
               stroke="#3b82f6"
               strokeWidth="3"
               strokeDasharray="8,4"
@@ -431,6 +506,13 @@ return (
               markerEnd="url(#preview-arrowhead)"
               className="animate-pulse"
               filter="url(#connection-glow)"
+            />
+            <circle
+              cx={connectionPreview.from.x}
+              cy={connectionPreview.from.y}
+              r="6"
+              fill="#3b82f6"
+              className="animate-pulse"
             />
           </g>
         )}
@@ -489,21 +571,30 @@ return (
               isDragging={draggedEntity?.id === entity.id}
             />
             
-            {/* Connection handles */}
+{/* Enhanced Connection handles with touch support */}
             <div className="absolute -top-2 -right-2 connection-handle">
               <button
-                className={`w-6 h-6 rounded-full border-2 border-white shadow-lg transition-colors flex items-center justify-center ${
+                className={`w-8 h-8 rounded-full border-2 border-white shadow-lg transition-all duration-200 flex items-center justify-center touch-target ${
                   isConnecting && connectionStart === entity.id 
-                    ? 'bg-green-500 hover:bg-green-600' 
-                    : 'bg-blue-500 hover:bg-blue-600'
+                    ? 'bg-green-500 hover:bg-green-600 scale-110' 
+                    : 'bg-blue-500 hover:bg-blue-600 hover:scale-110'
                 }`}
                 onMouseDown={(e) => handleConnectionStart(entity.id, e)}
                 onMouseUp={(e) => handleConnectionEnd(entity.id, e)}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  handleConnectionStart(entity.id, e);
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  handleConnectionEnd(entity.id, e);
+                }}
                 title="Connect to another entity"
+                aria-label={`Create connection from ${entity.type} ${entity.name}`}
               >
                 <ApperIcon 
                   name={isConnecting && connectionStart === entity.id ? "Link" : "Plus"} 
-                  size={12} 
+                  size={14} 
                   className="text-white" 
                 />
               </button>

@@ -76,20 +76,20 @@ const handleMouseLeave = () => {
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
-      whileHover={{ scale: isDragging ? 1.0 : 1.08, y: -5 }}
+whileHover={{ scale: isDragging ? 1.0 : 1.08, y: isDragging ? 0 : -5 }}
       whileTap={{ scale: 0.95 }}
       className={cn(
         "entity-card w-48 bg-white border-2 cursor-move select-none transition-all duration-300 shadow-lg hover:shadow-2xl",
         isSelected && "ring-4 ring-blue-500 ring-offset-2 shadow-blue-500/25",
-        isDragging && "opacity-80 rotate-2 scale-110 shadow-2xl z-50 ring-2 ring-purple-400",
-        isHovered && "shadow-xl",
+        isDragging && "opacity-90 rotate-3 scale-105 shadow-2xl z-50 ring-2 ring-purple-400 border-purple-400",
+        isHovered && !isDragging && "shadow-xl transform scale-105",
         config.borderColor
       )}
       onClick={onSelect}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       role="button"
-      aria-label={`${entity.type} entity: ${entity.name}. Click to select, drag to move.`}
+      aria-label={`${entity.type} entity: ${entity.name}. Click to select, drag to move. ${entity.properties.description || ''}`}
       tabIndex="0"
       {...props}
     >
@@ -109,15 +109,15 @@ const handleMouseLeave = () => {
               {entity.type}
             </span>
           </div>
-          <motion.button
+<motion.button
             onClick={(e) => {
               e.stopPropagation();
               onDelete(entity.id);
             }}
-            className="text-white hover:text-red-200 transition-colors touch-target"
+            className="text-white hover:text-red-200 transition-colors touch-target min-w-[44px] min-h-[44px] flex items-center justify-center"
             whileHover={{ scale: 1.2, rotate: 90 }}
             whileTap={{ scale: 0.9 }}
-            aria-label={`Delete ${entity.type}`}
+            aria-label={`Delete ${entity.type} entity`}
           >
             <ApperIcon name="X" size={16} />
           </motion.button>

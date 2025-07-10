@@ -74,11 +74,16 @@ const handleMouseEnter = (entityType, event) => {
             transition={{ delay: index * 0.1 }}
             whileHover={{ x: 5 }}
           >
-            <div
+<div
               draggable
               onDragStart={(e) => {
                 e.dataTransfer.setData("text/plain", entity.type);
                 e.dataTransfer.effectAllowed = "copy";
+                e.dataTransfer.setDragImage(e.currentTarget, 0, 0);
+              }}
+              onDragEnd={(e) => {
+                // Clean up drag state
+                e.currentTarget.style.opacity = "1";
               }}
               className="mb-2 relative"
               onMouseEnter={(e) => handleMouseEnter(entity.type, e)}
@@ -88,7 +93,7 @@ const handleMouseEnter = (entityType, event) => {
                 variant="outline"
                 size="sm"
                 onClick={() => onAddEntity(entity.type)}
-                className="w-full justify-start p-3 h-auto hover:shadow-lg drag-handle transition-all duration-300 hover:scale-105 interactive-element border-2 hover:border-blue-400"
+                className="w-full justify-start p-3 h-auto hover:shadow-lg drag-handle transition-all duration-300 hover:scale-105 interactive-element border-2 hover:border-blue-400 touch-target"
                 aria-label={`Add ${entity.type} component - ${entityTooltips[entity.type]}`}
               >
                 <motion.div 
@@ -107,10 +112,12 @@ const handleMouseEnter = (entityType, event) => {
               {/* Playful tooltip */}
 {hoveredEntity?.type === entity.type && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="absolute z-50 left-full ml-2 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg max-w-xs"
+                  initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.8 }}
+                  className="absolute z-50 left-full ml-2 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg shadow-lg max-w-xs pointer-events-none"
                   role="tooltip"
+                  aria-live="polite"
                 >
                   {entityTooltips[entity.type]}
                   <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1">

@@ -15,6 +15,7 @@ const CanvasPage = () => {
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isDragging, setIsDragging] = useState(false);
   const canvasRef = useRef(null);
   // Load initial data
   useEffect(() => {
@@ -59,13 +60,15 @@ const CanvasPage = () => {
 
 const handleAddEntity = async (type, customPosition = null) => {
     try {
+      setIsDragging(true);
+      
       // Validation: Only one Form1040 allowed
       if (type === "Form1040" && entities.some(e => e.type === "Form1040")) {
         toast.error("Only one Form 1040 allowed per structure");
         return;
       }
       
-      // Default positions for structured layout
+      // Improved default positioning with collision avoidance
       const defaultPositions = {
         Trust: { x: 200, y: 400 },      // Bottom center
         Form1040: { x: 200, y: 500 },  // Below Trust
@@ -73,19 +76,32 @@ const handleAddEntity = async (type, customPosition = null) => {
         SCorp: { x: 50, y: 300 }       // Left side
       };
       
-      const position = customPosition || defaultPositions[type] || 
+      let position = customPosition || defaultPositions[type] || 
         { x: 50 + Math.random() * 200, y: 50 + Math.random() * 200 };
       
-      // Validate position doesn't cause overlap
+      // Enhanced collision detection and avoidance
       const entitySize = { width: 200, height: 150 };
-      const overlap = entities.some(e => 
-        Math.abs(e.position.x - position.x) < entitySize.width &&
-        Math.abs(e.position.y - position.y) < entitySize.height
-      );
+      let attempts = 0;
+      const maxAttempts = 10;
       
-      if (overlap) {
-        toast.error("Cannot place entity - position would overlap with existing entity");
-        return;
+      while (attempts < maxAttempts) {
+        const overlap = entities.some(e => 
+          Math.abs(e.position.x - position.x) < entitySize.width * 0.8 &&
+          Math.abs(e.position.y - position.y) < entitySize.height * 0.8
+        );
+        
+        if (!overlap) break;
+        
+        // Try different positions
+        position = {
+          x: 50 + Math.random() * 400,
+          y: 50 + Math.random() * 300
+        };
+        attempts++;
+      }
+      
+      if (attempts >= maxAttempts && !customPosition) {
+        toast.warning("Placed entity in potentially overlapping position - please adjust manually");
       }
       
       const entityLabels = {
@@ -106,9 +122,11 @@ const handleAddEntity = async (type, customPosition = null) => {
       
       setEntities(prev => [...prev, newEntity]);
       setSelectedEntity(newEntity);
-      toast.success(`${type} added successfully!`);
+      toast.success(`${type} added successfully! 🎉`);
     } catch (err) {
-      toast.error(`Failed to add ${type}`);
+      toast.error(`Failed to add ${type}: ${err.message}`);
+    } finally {
+      setIsDragging(false);
     }
   };
 
@@ -142,7 +160,7 @@ const handleAddEntity = async (type, customPosition = null) => {
 
 const handleAddConnection = async (connectionData) => {
     try {
-      // Additional validation at the page level
+      // Enhanced validation at the page level
       const fromEntity = entities.find(e => e.id === connectionData.from);
       const toEntity = entities.find(e => e.id === connectionData.to);
       
@@ -151,7 +169,7 @@ const handleAddConnection = async (connectionData) => {
         return;
       }
       
-      // Check for duplicate connections
+      // Check for duplicate connections (bidirectional)
       const isDuplicate = connections.some(c => 
         (c.from === connectionData.from && c.to === connectionData.to) ||
         (c.from === connectionData.to && c.to === connectionData.from)
@@ -162,11 +180,22 @@ const handleAddConnection = async (connectionData) => {
         return;
       }
       
+      // Business logic validation
+      if (fromEntity.type === "Form1040") {
+        toast.error("Form 1040 cannot own other entities");
+        return;
+      }
+      
+      if (fromEntity.type === "Trust" && toEntity.type === "Trust") {
+        toast.error("Trusts cannot directly own other Trusts");
+        return;
+      }
+      
       const newConnection = await ConnectionService.create(connectionData);
       setConnections(prev => [...prev, newConnection]);
-      toast.success("Connection created successfully!");
+      toast.success(`Connection created: ${fromEntity.name} → ${toEntity.name} 🔗`);
     } catch (err) {
-      toast.error("Failed to create connection");
+      toast.error(`Failed to create connection: ${err.message}`);
     }
   };
 
