@@ -97,8 +97,11 @@ const [draggedEntity, setDraggedEntity] = useState(null);
     return errors;
   };
 
-  const handleMouseDown = useCallback((e, entity) => {
+const handleMouseDown = useCallback((e, entity) => {
     if (e.target.closest(".connection-handle")) return;
+    
+    // Prevent null reference error
+    if (!canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
     const entityRect = e.currentTarget.getBoundingClientRect();
@@ -116,6 +119,9 @@ const [draggedEntity, setDraggedEntity] = useState(null);
 
 const handleMouseMove = useCallback((e) => {
     if (!draggedEntity) return;
+    
+    // Prevent null reference error
+    if (!canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
     const newPosition = {
@@ -164,6 +170,9 @@ const handleDrop = useCallback((e) => {
     
     const entityType = e.dataTransfer.getData("text/plain");
     if (entityType && onAddEntity) {
+      // Prevent null reference error
+      if (!canvasRef.current) return;
+      
       const rect = canvasRef.current.getBoundingClientRect();
       const dropPosition = {
         x: e.clientX - rect.left - 100, // Center the entity
