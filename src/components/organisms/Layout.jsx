@@ -15,7 +15,8 @@ const Layout = ({
   connections,
   selectedEntity,
   onUpdateEntity,
-  onDeselectEntity
+  onDeselectEntity,
+  canvasRef
 }) => {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
@@ -141,9 +142,10 @@ const Layout = ({
             connections={connections}
           />
           
-          <ExportControls 
+<ExportControls 
             entities={entities}
             connections={connections}
+            canvasRef={canvasRef}
           />
           
           {selectedEntity && (
@@ -180,9 +182,10 @@ const Layout = ({
             connections={connections}
           />
           
-          <ExportControls 
+<ExportControls 
             entities={entities}
             connections={connections}
+            canvasRef={canvasRef}
           />
           
           {selectedEntity && (

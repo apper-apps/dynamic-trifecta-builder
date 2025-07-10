@@ -1,10 +1,10 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef, useState, forwardRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import ApperIcon from "@/components/ApperIcon";
 import Error from "@/components/ui/Error";
 import EntityCard from "@/components/molecules/EntityCard";
 
-const Canvas = ({ 
+const Canvas = forwardRef(({ 
   entities, 
   connections, 
   selectedEntity, 
@@ -14,7 +14,7 @@ const Canvas = ({
   onAddConnection,
   onDeleteConnection,
   onAddEntity 
-}) => {
+}, ref) => {
 const [draggedEntity, setDraggedEntity] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isConnecting, setIsConnecting] = useState(false);
@@ -346,7 +346,7 @@ const renderConnection = (connection) => {
 
 return (
     <div
-      ref={canvasRef}
+      ref={ref || canvasRef}
       className={`relative w-full h-full canvas-grid bg-white rounded-lg border-2 transition-all duration-200 overflow-hidden ${
         isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
       } ${validDropZone ? '' : 'border-red-500 bg-red-50'}`}
@@ -484,7 +484,9 @@ return (
         ))}
       </AnimatePresence>
     </div>
-  );
-};
+);
+});
+
+Canvas.displayName = 'Canvas';
 
 export default Canvas;

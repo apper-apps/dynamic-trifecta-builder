@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { toast } from "react-toastify";
 import Canvas from "@/components/organisms/Canvas";
 import Layout from "@/components/organisms/Layout";
@@ -8,7 +8,6 @@ import Loading from "@/components/ui/Loading";
 import EntityService from "@/services/api/EntityService";
 import ConnectionService from "@/services/api/ConnectionService";
 import AIService from "@/services/api/AIService";
-
 const CanvasPage = () => {
   const [entities, setEntities] = useState([]);
   const [connections, setConnections] = useState([]);
@@ -16,7 +15,7 @@ const CanvasPage = () => {
   const [selectedEntity, setSelectedEntity] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const canvasRef = useRef(null);
   // Load initial data
   useEffect(() => {
     loadData();
@@ -211,8 +210,8 @@ const handleDeleteConnection = async (id) => {
     );
   }
 
-  return (
-<Layout
+return (
+    <Layout
       onAddEntity={handleAddEntity}
       suggestions={suggestions}
       entities={entities}
@@ -221,6 +220,7 @@ const handleDeleteConnection = async (id) => {
       onUpdateEntity={handleUpdateEntity}
       onDeselectEntity={handleDeselectEntity}
       onSuggestionAction={handleSuggestionAction}
+      canvasRef={canvasRef}
     >
       {entities.length === 0 ? (
         <Empty
@@ -230,8 +230,9 @@ const handleDeleteConnection = async (id) => {
           onAction={() => handleAddEntity("Trust")}
           icon="Layers"
         />
-      ) : (
-<Canvas
+) : (
+        <Canvas
+          ref={canvasRef}
           entities={entities}
           connections={connections}
           selectedEntity={selectedEntity}
