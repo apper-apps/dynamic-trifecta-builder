@@ -252,49 +252,80 @@ case "Trust":
     }
   };
 
-  return (
+return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 20, scale: 0.95 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
     >
-      <Card className="p-6">
+      <Card className="p-6 shadow-xl border-2 border-blue-200">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <ApperIcon name="Settings" size={20} className="text-gray-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Properties</h3>
+            <motion.div
+              animate={{ rotate: [0, 360] }}
+              transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+            >
+              <ApperIcon name="Settings" size={20} className="text-blue-600" />
+            </motion.div>
+            <h3 className="text-lg font-bold text-gray-900">Properties ⚙️</h3>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="p-1"
-          >
-            <ApperIcon name="X" size={16} />
-          </Button>
+          <motion.div whileHover={{ scale: 1.1, rotate: 90 }} whileTap={{ scale: 0.9 }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="p-1 touch-target hover:bg-red-100"
+              aria-label="Close properties panel"
+            >
+              <ApperIcon name="X" size={16} />
+            </Button>
+          </motion.div>
         </div>
         
-        <div className="space-y-4">
-          <div className="space-y-2">
+        <motion.div 
+          className="space-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
+          <motion.div 
+            className="space-y-2"
+            whileHover={{ x: 2 }}
+            transition={{ duration: 0.2 }}
+          >
             <Label>Entity Name</Label>
             <Input
               value={selectedEntity.name}
               onChange={(e) => handleNameChange(e.target.value)}
               placeholder="Enter entity name..."
+              className="font-semibold"
+              aria-label="Entity name input"
             />
-          </div>
+          </motion.div>
           
-          <div className="space-y-2">
+          <motion.div 
+            className="space-y-2"
+            whileHover={{ x: 2 }}
+            transition={{ duration: 0.2 }}
+          >
             <Label>Description</Label>
             <Input
               value={selectedEntity.properties.description || ""}
               onChange={(e) => handlePropertyChange("description", e.target.value)}
               placeholder="Enter description..."
+              aria-label="Entity description input"
             />
-          </div>
+          </motion.div>
           
-          {getEntityFields()}
-        </div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3, duration: 0.4 }}
+          >
+            {getEntityFields()}
+          </motion.div>
+        </motion.div>
       </Card>
     </motion.div>
   );

@@ -176,28 +176,36 @@ const handleExportPDF = async () => {
     }
   };
 
-  return (
-    <Card className="p-4">
+return (
+    <Card className="p-4 shadow-lg">
       <div className="flex items-center gap-2 mb-4">
-        <ApperIcon name="Download" size={20} className="text-gray-600" />
-        <h3 className="text-lg font-semibold text-gray-900">Export & Share</h3>
+        <motion.div
+          animate={{ rotate: [0, 15, 0] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          <ApperIcon name="Download" size={20} className="text-blue-600" />
+        </motion.div>
+        <h3 className="text-lg font-bold text-gray-900">Export & Share</h3>
       </div>
       
       <div className="space-y-3">
-<div className="space-y-2">
+        <div className="space-y-2">
           <Button
             variant="outline"
             size="sm"
             onClick={handleExportPDF}
             disabled={isExporting}
-            className="w-full flex items-center gap-2"
+            className="w-full flex items-center gap-2 hover:bg-red-50 hover:border-red-300 touch-target"
+            aria-label="Export structure as PDF document"
           >
             {isExporting ? (
-              <ApperIcon name="Loader2" size={16} className="animate-spin" />
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+                <ApperIcon name="Loader2" size={16} className="text-red-600" />
+              </motion.div>
             ) : (
-              <ApperIcon name="FileText" size={16} />
+              <ApperIcon name="FileText" size={16} className="text-red-600" />
             )}
-            Export as PDF
+            <span className="font-semibold">Export as PDF</span>
           </Button>
           
           <Button
@@ -205,14 +213,17 @@ const handleExportPDF = async () => {
             size="sm"
             onClick={handleExportImage}
             disabled={isExporting}
-            className="w-full flex items-center gap-2"
+            className="w-full flex items-center gap-2 hover:bg-green-50 hover:border-green-300 touch-target"
+            aria-label="Export structure as high-quality image"
           >
             {isExporting ? (
-              <ApperIcon name="Loader2" size={16} className="animate-spin" />
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+                <ApperIcon name="Loader2" size={16} className="text-green-600" />
+              </motion.div>
             ) : (
-              <ApperIcon name="Image" size={16} />
+              <ApperIcon name="Image" size={16} className="text-green-600" />
             )}
-            Export as Image
+            <span className="font-semibold">Export as Image</span>
           </Button>
           
           <Button
@@ -220,29 +231,35 @@ const handleExportPDF = async () => {
             size="sm"
             onClick={handleExportJSON}
             disabled={isExporting}
-            className="w-full flex items-center gap-2"
+            className="w-full flex items-center gap-2 hover:bg-purple-50 hover:border-purple-300 touch-target"
+            aria-label="Export structure as JSON data file"
           >
             {isExporting ? (
-              <ApperIcon name="Loader2" size={16} className="animate-spin" />
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
+                <ApperIcon name="Loader2" size={16} className="text-purple-600" />
+              </motion.div>
             ) : (
-              <ApperIcon name="FileCode" size={16} />
+              <ApperIcon name="FileCode" size={16} className="text-purple-600" />
             )}
-            Export as JSON
+            <span className="font-semibold">Export as JSON</span>
           </Button>
         </div>
         
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={handleShare}
-          className="w-full flex items-center gap-2"
-        >
-          <ApperIcon name="Share2" size={16} />
-          Share Structure
-        </Button>
+        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={handleShare}
+            className="w-full flex items-center gap-2 touch-target"
+            aria-label="Share structure with others"
+          >
+            <ApperIcon name="Share2" size={16} />
+            <span className="font-bold">Share Structure 🚀</span>
+          </Button>
+        </motion.div>
         
-<div className="text-xs text-gray-500 text-center">
-          Export your structure as PDF/image for presentations or JSON for data backup
+        <div className="text-xs text-gray-600 text-center font-medium bg-gradient-to-r from-blue-50 to-purple-50 p-2 rounded-lg border border-blue-200">
+          📊 Export your structure as PDF/image for presentations or JSON for data backup
         </div>
       </div>
     </Card>

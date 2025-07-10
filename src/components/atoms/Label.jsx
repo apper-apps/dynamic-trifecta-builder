@@ -1,4 +1,4 @@
-import React from "react";
+import React, { forwardRef } from "react";
 import { cn } from "@/utils/cn";
 
 const Label = React.forwardRef(({ className, ...props }, ref) => {
@@ -6,7 +6,7 @@ const Label = React.forwardRef(({ className, ...props }, ref) => {
     <label
       ref={ref}
       className={cn(
-        "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-700",
+        "text-sm font-semibold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-800",
         className
       )}
       {...props}

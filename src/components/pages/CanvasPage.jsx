@@ -211,40 +211,46 @@ const handleDeleteConnection = async (id) => {
   }
 
 return (
-    <Layout
-      onAddEntity={handleAddEntity}
-      suggestions={suggestions}
-      entities={entities}
-      connections={connections}
-      selectedEntity={selectedEntity}
-      onUpdateEntity={handleUpdateEntity}
-      onDeselectEntity={handleDeselectEntity}
-      onSuggestionAction={handleSuggestionAction}
-      canvasRef={canvasRef}
+    <div 
+      className="h-screen" 
+      role="application" 
+      aria-label="Trifecta Tax Strategy Builder"
     >
-      {entities.length === 0 ? (
-        <Empty
-          title="Start Building Your Trifecta Structure"
-          message="Design your tax and asset protection strategy with our intuitive drag-and-drop builder. Add entities, connect them, and get AI-powered suggestions from Mark Kohler's expertise."
-          actionLabel="Add First Entity"
-          onAction={() => handleAddEntity("Trust")}
-          icon="Layers"
-        />
-) : (
-        <Canvas
-          ref={canvasRef}
-          entities={entities}
-          connections={connections}
-          selectedEntity={selectedEntity}
-          onSelectEntity={handleSelectEntity}
-          onUpdateEntity={handleUpdateEntity}
-          onDeleteEntity={handleDeleteEntity}
-          onAddConnection={handleAddConnection}
-          onDeleteConnection={handleDeleteConnection}
-          onAddEntity={handleAddEntity}
-        />
-      )}
-    </Layout>
+      <Layout
+        onAddEntity={handleAddEntity}
+        suggestions={suggestions}
+        entities={entities}
+        connections={connections}
+        selectedEntity={selectedEntity}
+        onUpdateEntity={handleUpdateEntity}
+        onDeselectEntity={handleDeselectEntity}
+        onSuggestionAction={handleSuggestionAction}
+        canvasRef={canvasRef}
+      >
+        {entities.length === 0 ? (
+          <Empty
+            title="Start Building Your Trifecta Structure 🏗️"
+            message="Design your tax and asset protection strategy with our intuitive drag-and-drop builder. Add entities, connect them, and get AI-powered suggestions from Mark Kohler's expertise! ✨"
+            actionLabel="Add First Entity 🚀"
+            onAction={() => handleAddEntity("Trust")}
+            icon="Layers"
+          />
+        ) : (
+          <Canvas
+            ref={canvasRef}
+            entities={entities}
+            connections={connections}
+            selectedEntity={selectedEntity}
+            onSelectEntity={handleSelectEntity}
+            onUpdateEntity={handleUpdateEntity}
+            onDeleteEntity={handleDeleteEntity}
+            onAddConnection={handleAddConnection}
+            onDeleteConnection={handleDeleteConnection}
+            onAddEntity={handleAddEntity}
+          />
+        )}
+      </Layout>
+    </div>
   );
 };
 

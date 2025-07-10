@@ -9,13 +9,13 @@ const Button = React.forwardRef(({
   disabled,
   ...props 
 }, ref) => {
-  const variants = {
-    primary: "bg-gradient-to-r from-primary to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl",
-    secondary: "bg-gradient-to-r from-secondary to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl",
-    accent: "bg-gradient-to-r from-accent to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg hover:shadow-xl",
-    outline: "border-2 border-gray-300 hover:border-gray-400 bg-white hover:bg-gray-50 text-gray-700",
-    ghost: "hover:bg-gray-100 text-gray-700 hover:text-gray-900",
-    danger: "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg hover:shadow-xl"
+const variants = {
+    primary: "bg-gradient-to-r from-primary to-blue-600 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg hover:shadow-2xl hover:shadow-blue-500/25 border-0",
+    secondary: "bg-gradient-to-r from-secondary to-green-600 hover:from-green-700 hover:to-green-800 text-white shadow-lg hover:shadow-2xl hover:shadow-green-500/25 border-0",
+    accent: "bg-gradient-to-r from-accent to-red-600 hover:from-red-700 hover:to-red-800 text-white shadow-lg hover:shadow-2xl hover:shadow-red-500/25 border-0",
+    outline: "border-2 border-gray-300 hover:border-blue-500 bg-white hover:bg-blue-50 text-gray-700 hover:text-blue-700 shadow-md hover:shadow-lg",
+    ghost: "hover:bg-gray-100 text-gray-700 hover:text-gray-900 hover:shadow-md",
+    danger: "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-700 hover:to-red-800 text-white shadow-lg hover:shadow-2xl hover:shadow-red-500/25 border-0"
   };
 
   const sizes = {
@@ -27,8 +27,8 @@ const Button = React.forwardRef(({
 
   return (
     <button
-      className={cn(
-        "inline-flex items-center justify-center rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]",
+className={cn(
+        "inline-flex items-center justify-center rounded-lg font-medium transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.05] active:scale-[0.95] accessible-button interactive-element",
         variants[variant],
         sizes[size],
         className

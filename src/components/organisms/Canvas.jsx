@@ -347,15 +347,18 @@ const renderConnection = (connection) => {
 return (
     <div
       ref={ref || canvasRef}
-      className={`relative w-full h-full canvas-grid bg-white rounded-lg border-2 transition-all duration-200 overflow-hidden ${
-        isDragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
-      } ${validDropZone ? '' : 'border-red-500 bg-red-50'}`}
+      className={`relative w-full h-full canvas-grid bg-white rounded-lg border-2 transition-all duration-300 overflow-hidden shadow-inner ${
+        isDragOver ? 'border-blue-500 bg-blue-50 shadow-blue-500/20' : 'border-gray-300'
+      } ${validDropZone ? 'shadow-lg' : 'border-red-500 bg-red-50 shadow-red-500/20'}`}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onClick={handleCanvasClick}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
+      role="application"
+      aria-label="Canvas for building tax and asset protection structures"
+      tabIndex="0"
     >
       {/* Validation Error Display */}
       {validationErrors.length > 0 && (
@@ -372,8 +375,22 @@ return (
         </div>
       )}
       
-      {/* SVG for connections */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
+{/* SVG for connections */}
+      <svg 
+        className="absolute inset-0 w-full h-full pointer-events-none" 
+        style={{ zIndex: 1 }}
+        role="img"
+        aria-label="Connection diagram showing relationships between entities"
+      >
+        <defs>
+          <filter id="connection-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge> 
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
         {connections.map(renderConnection)}
         
         {/* Connection Preview */}
@@ -382,42 +399,50 @@ return (
             <defs>
               <marker
                 id="preview-arrowhead"
-                markerWidth="10"
-                markerHeight="7"
-                refX="9"
-                refY="3.5"
+                markerWidth="12"
+                markerHeight="8"
+                refX="10"
+                refY="4"
                 orient="auto"
               >
                 <polygon
-                  points="0 0, 10 3.5, 0 7"
-                  fill="#94A3B8"
+                  points="0 0, 12 4, 0 8"
+                  fill="#3b82f6"
+                  className="animate-pulse"
                 />
               </marker>
             </defs>
             <path
               d={`M ${entities.find(e => e.id === connectionStart)?.position.x + 96} ${entities.find(e => e.id === connectionStart)?.position.y + 75} L ${entities.find(e => e.id === connectionStart)?.position.x + 96} ${entities.find(e => e.id === connectionStart)?.position.y + 75}`}
-              stroke="#94A3B8"
-              strokeWidth="2"
-              strokeDasharray="4,4"
+              stroke="#3b82f6"
+              strokeWidth="3"
+              strokeDasharray="8,4"
               fill="none"
               markerEnd="url(#preview-arrowhead)"
               className="animate-pulse"
+              filter="url(#connection-glow)"
             />
           </g>
         )}
       </svg>
       
-      {/* Empty state */}
+{/* Empty state */}
       {entities.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             className="text-center"
+            role="status"
+            aria-live="polite"
           >
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <motion.div 
+              className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg"
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            >
               <ApperIcon name="Layers" size={48} className="text-blue-500" />
-            </div>
+            </motion.div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               Start Building Your Structure
             </h3>
