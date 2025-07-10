@@ -133,7 +133,7 @@ const handleAddEntity = async (type, customPosition = null) => {
     }
   };
 
-  const handleDeleteConnection = async (id) => {
+const handleDeleteConnection = async (id) => {
     try {
       await ConnectionService.delete(id);
       setConnections(prev => prev.filter(c => c.id !== id));
@@ -141,9 +141,7 @@ const handleAddEntity = async (type, customPosition = null) => {
     } catch (err) {
       toast.error("Failed to delete connection");
     }
-}
   };
-
   const handleSuggestionAction = async (suggestion) => {
     try {
       if (suggestion.type === 'add_entity') {
