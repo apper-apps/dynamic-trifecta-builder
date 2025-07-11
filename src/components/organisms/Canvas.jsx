@@ -1287,12 +1287,13 @@ onMouseDown={(e) => handleMouseDown(e, entity)}
             <p>• <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+Click</kbd> for multi-select</p>
             <p>• <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Arrow keys</kbd> to move selected</p>
             <p>• <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+Wheel</kbd> to zoom</p>
-            <p>• <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Space</kbd> to toggle grid</p>
+<p>• <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Space</kbd> to toggle grid</p>
           </div>
         </div>
       )}
     </div>
   );
+});
 
 Canvas.displayName = 'Canvas';
 
