@@ -29,7 +29,7 @@ const CanvasPage = () => {
     }
   }, [entities, connections]);
 
-  const loadData = async () => {
+const loadData = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -41,9 +41,16 @@ const CanvasPage = () => {
       
       setEntities(entitiesData);
       setConnections(connectionsData);
+      
+      // Show welcome message for new users
+      if (entitiesData.length === 0) {
+        setTimeout(() => {
+          toast.info("Welcome to Trifecta Builder! Start by adding your first entity from the sidebar. 🚀");
+        }, 1000);
+      }
     } catch (err) {
       setError(err.message || "Failed to load data");
-      toast.error("Failed to load your structure");
+      toast.error("Failed to load your structure - please check your connection");
     } finally {
       setLoading(false);
     }
@@ -55,6 +62,7 @@ const CanvasPage = () => {
       setSuggestions(newSuggestions);
     } catch (err) {
       console.error("Failed to generate suggestions:", err);
+      // Don't show error to user as this is not critical
     }
   };
 
@@ -68,47 +76,50 @@ const handleAddEntity = async (type, customPosition = null) => {
         return;
       }
       
-      // Improved default positioning with collision avoidance
+      // Smart positioning system - distribute entities intelligently
       const defaultPositions = {
-        Trust: { x: 200, y: 400 },      // Bottom center
-        Form1040: { x: 200, y: 500 },  // Below Trust
-        LLC: { x: 400, y: 300 },       // Right side
-        SCorp: { x: 50, y: 300 }       // Left side
+        Trust: { x: 300, y: 400 },      // Center bottom
+        Form1040: { x: 300, y: 600 },  // Below Trust
+        LLC: { x: 500, y: 300 },       // Right side
+        SCorp: { x: 100, y: 300 }      // Left side
       };
       
       let position = customPosition || defaultPositions[type] || 
-        { x: 50 + Math.random() * 200, y: 50 + Math.random() * 200 };
+        { x: 100 + Math.random() * 400, y: 100 + Math.random() * 300 };
       
-      // Enhanced collision detection and avoidance
+      // Enhanced collision detection with spiral search
       const entitySize = { width: 200, height: 150 };
       let attempts = 0;
-      const maxAttempts = 10;
+      const maxAttempts = 20;
+      const searchRadius = 50;
       
       while (attempts < maxAttempts) {
         const overlap = entities.some(e => 
-          Math.abs(e.position.x - position.x) < entitySize.width * 0.8 &&
-          Math.abs(e.position.y - position.y) < entitySize.height * 0.8
+          Math.abs(e.position.x - position.x) < entitySize.width * 0.9 &&
+          Math.abs(e.position.y - position.y) < entitySize.height * 0.9
         );
         
         if (!overlap) break;
         
-        // Try different positions
+        // Spiral search for free space
+        const angle = (attempts / maxAttempts) * Math.PI * 2;
+        const radius = searchRadius + (attempts * 10);
         position = {
-          x: 50 + Math.random() * 400,
-          y: 50 + Math.random() * 300
+          x: Math.max(50, Math.min(900, defaultPositions[type].x + Math.cos(angle) * radius)),
+          y: Math.max(50, Math.min(600, defaultPositions[type].y + Math.sin(angle) * radius))
         };
         attempts++;
       }
       
       if (attempts >= maxAttempts && !customPosition) {
-        toast.warning("Placed entity in potentially overlapping position - please adjust manually");
+        toast.warning("Canvas is crowded - entity placed in available space");
       }
       
       const entityLabels = {
-        Trust: "Foundation",
-        LLC: "Asset Holdings",
+        Trust: "Foundation Trust",
+        LLC: "Asset Holdings LLC",
         SCorp: "Business Operations", 
-        Form1040: "Tax Blender"
+        Form1040: "Personal Tax Return"
       };
       
       const newEntity = await EntityService.create({
@@ -116,7 +127,9 @@ const handleAddEntity = async (type, customPosition = null) => {
         name: entityLabels[type] || `New ${type}`,
         position,
         properties: {
-          description: `A new ${type} entity`
+          description: `A new ${type} entity for your structure`,
+          state: "NV", // Default state
+          taxElection: type === "LLC" ? "Partnership" : type === "SCorp" ? "S-Corp" : "Default"
         }
       });
       

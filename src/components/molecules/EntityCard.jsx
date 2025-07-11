@@ -59,12 +59,25 @@ const config = entityConfig[entity.type] || entityConfig.Trust;
 
 const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    // Voice narration for entity details
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setIsPressed(false);
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+  };
+
+  const handleFocus = () => {
+    setIsFocused(true);
+    // Announce entity info for screen readers
     const entityInfo = `${entity.type}: ${entity.name}. ${entity.properties.description || 'No description available.'}`;
-    if ('speechSynthesis' in window && isHovered) {
+    if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(entityInfo);
       utterance.rate = 0.9;
       utterance.pitch = 1.0;
@@ -73,56 +86,75 @@ const [isHovered, setIsHovered] = useState(false);
     }
   };
 
-const handleMouseLeave = () => {
-    setIsHovered(false);
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
-  };
-
-const handleFocus = () => {
-    setIsFocused(true);
-  };
-
   const handleBlur = () => {
     setIsFocused(false);
+    setIsPressed(false);
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
+      setIsPressed(true);
       onSelect();
     }
   };
 
-  return (
+  const handleKeyUp = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      setIsPressed(false);
+    }
+  };
+
+  const handleMouseDown = () => {
+    setIsPressed(true);
+  };
+
+  const handleMouseUp = () => {
+    setIsPressed(false);
+  };
+
+return (
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
-      whileHover={{ scale: isDragging ? 1.0 : 1.08, y: isDragging ? 0 : -5 }}
-      whileTap={{ scale: 0.95 }}
+      whileHover={{ scale: isDragging ? 1.0 : 1.05, y: isDragging ? 0 : -2 }}
+      whileTap={{ scale: 0.98 }}
       className={cn(
-        "entity-card w-48 bg-white border-2 cursor-move select-none transition-all duration-300 shadow-lg hover:shadow-2xl",
+        "entity-card w-48 bg-white border-2 cursor-move select-none transition-all duration-200 shadow-lg hover:shadow-xl",
         isSelected && "ring-4 ring-blue-500 ring-offset-2 shadow-blue-500/25",
         isMultiSelected && "ring-4 ring-purple-500 ring-offset-2 shadow-purple-500/25",
-        isDragging && "opacity-90 rotate-3 scale-105 shadow-2xl z-50 ring-2 ring-purple-400 border-purple-400",
-        isHovered && !isDragging && "shadow-xl transform scale-105",
+        isDragging && "opacity-90 rotate-1 scale-105 shadow-2xl z-50 ring-2 ring-purple-400 border-purple-400",
+        isHovered && !isDragging && "shadow-xl transform scale-102",
         isFocused && "ring-2 ring-blue-400 ring-offset-1",
+        isPressed && "scale-98 shadow-md",
         config.borderColor,
         config.category === "asset" ? "entity-asset" : "entity-operation"
       )}
       onClick={onSelect}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onMouseDown={handleMouseDown}
+      onMouseUp={handleMouseUp}
       onFocus={handleFocus}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
+      onKeyUp={handleKeyUp}
       role="button"
       aria-label={`${entity.type} entity: ${entity.name}. Click to select, drag to move. ${entity.properties.description || ''}`}
+      aria-pressed={isSelected ? "true" : "false"}
+      aria-describedby={`entity-${entity.id}-description`}
       tabIndex="0"
       {...props}
     >
+      {/* Hidden description for screen readers */}
+      <div id={`entity-${entity.id}-description`} className="sr-only">
+        {entity.type} entity named {entity.name}. 
+        {entity.properties.description && `Description: ${entity.properties.description}. `}
+        {entity.properties.state && `State: ${entity.properties.state}. `}
+        {entity.properties.taxElection && `Tax election: ${entity.properties.taxElection}. `}
+        Category: {config.categoryLabel}.
+      </div>
       <div className={cn(
         "px-4 py-3 rounded-t-lg bg-gradient-to-r shadow-inner",
         config.gradient
@@ -142,12 +174,16 @@ const handleFocus = () => {
 <motion.button
             onClick={(e) => {
               e.stopPropagation();
-              onDelete(entity.id);
+              const confirmed = window.confirm(`Delete ${entity.type} "${entity.name}"?`);
+              if (confirmed) {
+                onDelete(entity.id);
+              }
             }}
-            className="text-white hover:text-red-200 transition-colors touch-target min-w-[44px] min-h-[44px] flex items-center justify-center"
-            whileHover={{ scale: 1.2, rotate: 90 }}
+            className="text-white hover:text-red-200 transition-colors touch-target min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-white/20"
+            whileHover={{ scale: 1.1, rotate: 90 }}
             whileTap={{ scale: 0.9 }}
-            aria-label={`Delete ${entity.type} entity`}
+            aria-label={`Delete ${entity.type} entity ${entity.name}`}
+            tabIndex="0"
           >
             <ApperIcon name="X" size={16} />
           </motion.button>

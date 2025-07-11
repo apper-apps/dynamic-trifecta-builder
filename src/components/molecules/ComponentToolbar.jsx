@@ -128,32 +128,41 @@ const getSectionConfig = () => {
                 e.dataTransfer.setData("text/plain", entity.type);
                 e.dataTransfer.effectAllowed = "copy";
                 e.dataTransfer.setDragImage(e.currentTarget, 0, 0);
+                e.currentTarget.style.opacity = "0.8";
               }}
               onDragEnd={(e) => {
                 // Clean up drag state
                 e.currentTarget.style.opacity = "1";
               }}
+              onDrag={(e) => {
+                e.currentTarget.style.opacity = "0.6";
+              }}
               className="mb-2 relative"
               onMouseEnter={(e) => handleMouseEnter(entity.type, e)}
               onMouseLeave={handleMouseLeave}
             >
-              <Button
+<Button
                 variant="outline"
                 size="sm"
                 onClick={() => onAddEntity(entity.type)}
-                className="w-full justify-start p-3 h-auto hover:shadow-lg drag-handle transition-all duration-300 hover:scale-105 interactive-element border-2 hover:border-blue-400 touch-target"
+                className="w-full justify-start p-3 h-auto hover:shadow-lg drag-handle transition-all duration-200 hover:scale-105 interactive-element border-2 hover:border-blue-400 touch-target active:scale-95"
                 aria-label={`Add ${entity.type} component - ${entityTooltips[entity.type]}`}
+                tabIndex="0"
               >
                 <motion.div 
                   className={`p-2 rounded-lg bg-gradient-to-r ${entity.gradient} mr-3 shadow-md`}
-                  whileHover={{ scale: 1.2, rotate: 10 }}
+                  whileHover={{ scale: 1.15, rotate: 8 }}
+                  whileTap={{ scale: 0.95 }}
                   transition={{ duration: 0.2 }}
                 >
                   <ApperIcon name={entity.icon} size={16} className="text-white" />
                 </motion.div>
-                <div className="text-left">
+                <div className="text-left flex-1">
                   <div className="font-semibold text-gray-900">{entity.type}</div>
                   <div className="text-xs text-gray-600 font-medium">{entity.description}</div>
+                </div>
+                <div className="text-xs text-gray-400 opacity-50">
+                  <ApperIcon name="Plus" size={12} />
                 </div>
               </Button>
               

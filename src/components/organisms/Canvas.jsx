@@ -205,19 +205,25 @@ const [draggedEntity, setDraggedEntity] = useState(null);
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
   }, [handleMouseMove]);
-// Keyboard navigation and shortcuts
+// Enhanced keyboard navigation and shortcuts
   const handleKeyDown = useCallback((e) => {
     if (!canvasRef.current) return;
     
+    // Check if we're in an input field
+    const isInputField = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.contentEditable === 'true';
+    if (isInputField) return;
+    
     // Prevent default for handled keys
-    const handledKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Delete', 'Backspace', 'KeyC', 'KeyV', 'KeyZ', 'KeyY'];
+    const handledKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Delete', 'Backspace', 'KeyC', 'KeyV', 'KeyZ', 'KeyY', 'KeyA', 'Escape', 'Space'];
     if (handledKeys.includes(e.code) || (e.ctrlKey && handledKeys.includes(e.code))) {
       e.preventDefault();
     }
     
-    // Movement with arrow keys
+    // Enhanced movement with arrow keys
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
-      const moveDistance = e.shiftKey ? 40 : 20; // Shift for larger steps
+      if (selectedEntities.size === 0) return;
+      
+      const moveDistance = e.shiftKey ? 40 : e.ctrlKey ? 5 : 20; // Fine/normal/large movement
       const deltaX = e.code === 'ArrowLeft' ? -moveDistance : e.code === 'ArrowRight' ? moveDistance : 0;
       const deltaY = e.code === 'ArrowUp' ? -moveDistance : e.code === 'ArrowDown' ? moveDistance : 0;
       
@@ -226,19 +232,29 @@ const [draggedEntity, setDraggedEntity] = useState(null);
         if (!entity) return;
         
         const newPosition = {
-          x: Math.max(0, entity.position.x + deltaX),
-          y: Math.max(0, entity.position.y + deltaY)
+          x: Math.max(0, Math.min(1200, entity.position.x + deltaX)), // Canvas bounds
+          y: Math.max(0, Math.min(800, entity.position.y + deltaY))
         };
+        
+        // Snap to grid if enabled
+        const snappedPosition = snapToGrid(newPosition);
         
         onUpdateEntity(entity.id, {
           ...entity,
-          position: newPosition
+          position: snappedPosition
         });
       });
     }
     
-    // Delete selected entities
+    // Enhanced delete with confirmation for multiple items
     if (e.code === 'Delete' || e.code === 'Backspace') {
+      if (selectedEntities.size === 0) return;
+      
+      if (selectedEntities.size > 1) {
+        const confirmed = window.confirm(`Delete ${selectedEntities.size} selected entities?`);
+        if (!confirmed) return;
+      }
+      
       selectedEntities.forEach(entityId => {
         onDeleteEntity(entityId);
       });
@@ -269,48 +285,81 @@ const [draggedEntity, setDraggedEntity] = useState(null);
     if (e.ctrlKey && e.code === 'KeyA') {
       setSelectedEntities(new Set(entities.map(e => e.id)));
     }
-  }, [entities, selectedEntities, onUpdateEntity, onDeleteEntity]);
+    
+    // Escape to clear selection
+    if (e.code === 'Escape') {
+      setSelectedEntities(new Set());
+      setIsConnecting(false);
+      setConnectionStart(null);
+      setConnectionPreview(null);
+    }
+    
+    // Space to toggle grid
+    if (e.code === 'Space' && !e.ctrlKey) {
+      setShowGrid(!showGrid);
+    }
+  }, [entities, selectedEntities, onUpdateEntity, onDeleteEntity, showGrid, snapToGrid]);
 
-  // Zoom and pan functionality
+// Enhanced zoom and pan functionality
   const handleWheel = useCallback((e) => {
     if (!canvasRef.current) return;
     e.preventDefault();
     
-    if (e.ctrlKey) {
-      // Zoom with Ctrl + wheel
+    if (e.ctrlKey || e.metaKey) {
+      // Zoom with Ctrl/Cmd + wheel
+      const rect = canvasRef.current.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      const newZoom = Math.min(3, Math.max(0.5, zoom * delta));
+      const newZoom = Math.min(3, Math.max(0.25, zoom * delta));
+      
+      // Zoom towards mouse position
+      const zoomFactor = newZoom / zoom;
+      setPan(prev => ({
+        x: prev.x - (mouseX - prev.x) * (zoomFactor - 1),
+        y: prev.y - (mouseY - prev.y) * (zoomFactor - 1)
+      }));
+      
       setZoom(newZoom);
     } else {
-      // Pan with wheel
+      // Enhanced pan with wheel - smoother and more responsive
+      const panSpeed = 1.5;
       setPan(prev => ({
-        x: prev.x - e.deltaX,
-        y: prev.y - e.deltaY
+        x: Math.max(-500, Math.min(500, prev.x - e.deltaX * panSpeed)),
+        y: Math.max(-500, Math.min(500, prev.y - e.deltaY * panSpeed))
       }));
     }
   }, [zoom]);
 
-  // Pan start handler
+  // Enhanced pan start handler with touch support
   const handlePanStart = useCallback((e) => {
-    if (e.button === 1 || (e.button === 0 && e.altKey)) { // Middle mouse or Alt+Left mouse
+    if (e.button === 1 || (e.button === 0 && (e.altKey || e.ctrlKey))) { // Middle mouse or Alt/Ctrl+Left mouse
       setIsPanning(true);
       setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
       e.preventDefault();
+      canvasRef.current.style.cursor = 'grabbing';
     }
   }, [pan]);
 
-  // Pan move handler
+  // Enhanced pan move handler
   const handlePanMove = useCallback((e) => {
     if (!isPanning) return;
-    setPan({
-      x: e.clientX - panStart.x,
-      y: e.clientY - panStart.y
-    });
+    
+    const newPan = {
+      x: Math.max(-500, Math.min(500, e.clientX - panStart.x)),
+      y: Math.max(-500, Math.min(500, e.clientY - panStart.y))
+    };
+    
+    setPan(newPan);
   }, [isPanning, panStart]);
 
-  // Pan end handler
+  // Enhanced pan end handler
   const handlePanEnd = useCallback(() => {
     setIsPanning(false);
+    if (canvasRef.current) {
+      canvasRef.current.style.cursor = 'default';
+    }
   }, []);
 
   // Copy functionality
@@ -499,30 +548,60 @@ const [draggedEntity, setDraggedEntity] = useState(null);
     });
   }, [entities, selectedEntities, onUpdateEntity]);
 
-  // Add keyboard event listeners
+// Enhanced keyboard and mouse event listeners
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    canvas.addEventListener('keydown', handleKeyDown);
-    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    // Make canvas focusable for keyboard events
+    canvas.setAttribute('tabindex', '0');
+    
+    const handleKeyDownWrapper = (e) => {
+      handleKeyDown(e);
+    };
+    
+    const handleWheelWrapper = (e) => {
+      handleWheel(e);
+    };
+    
+    const handleMouseDownWrapper = (e) => {
+      handlePanStart(e);
+    };
+    
+    canvas.addEventListener('keydown', handleKeyDownWrapper);
+    canvas.addEventListener('wheel', handleWheelWrapper, { passive: false });
+    canvas.addEventListener('mousedown', handleMouseDownWrapper);
+    
+    // Focus canvas on mount for immediate keyboard access
+    canvas.focus();
     
     return () => {
-      canvas.removeEventListener('keydown', handleKeyDown);
-      canvas.removeEventListener('wheel', handleWheel);
+      canvas.removeEventListener('keydown', handleKeyDownWrapper);
+      canvas.removeEventListener('wheel', handleWheelWrapper);
+      canvas.removeEventListener('mousedown', handleMouseDownWrapper);
     };
-  }, [handleKeyDown, handleWheel]);
+  }, [handleKeyDown, handleWheel, handlePanStart]);
 
-  // Add pan event listeners
+  // Enhanced pan event listeners with proper cleanup
   useEffect(() => {
     if (!isPanning) return;
     
-    document.addEventListener('mousemove', handlePanMove);
-    document.addEventListener('mouseup', handlePanEnd);
+    const handlePanMoveWrapper = (e) => {
+      handlePanMove(e);
+    };
+    
+    const handlePanEndWrapper = () => {
+      handlePanEnd();
+    };
+    
+    document.addEventListener('mousemove', handlePanMoveWrapper);
+    document.addEventListener('mouseup', handlePanEndWrapper);
+    document.addEventListener('mouseleave', handlePanEndWrapper);
     
     return () => {
-      document.removeEventListener('mousemove', handlePanMove);
-      document.removeEventListener('mouseup', handlePanEnd);
+      document.removeEventListener('mousemove', handlePanMoveWrapper);
+      document.removeEventListener('mouseup', handlePanEndWrapper);
+      document.removeEventListener('mouseleave', handlePanEndWrapper);
     };
   }, [isPanning, handlePanMove, handlePanEnd]);
 
@@ -868,7 +947,9 @@ return (
       ref={ref || canvasRef}
       className={`relative w-full h-full ${showGrid ? 'canvas-grid' : ''} bg-white rounded-lg border-2 transition-all duration-300 overflow-hidden shadow-inner ${
         isDragOver ? 'border-blue-500 bg-blue-50 shadow-blue-500/20' : 'border-gray-300'
-      } ${validDropZone ? 'shadow-lg' : 'border-red-500 bg-red-50 shadow-red-500/20'}`}
+      } ${validDropZone ? 'shadow-lg' : 'border-red-500 bg-red-50 shadow-red-500/20'} ${
+        isPanning ? 'cursor-grabbing' : 'cursor-grab'
+      }`}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseDown={handleSelectionStart}
@@ -877,14 +958,23 @@ return (
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       role="application"
-      aria-label="Canvas for building tax and asset protection structures"
+      aria-label="Interactive canvas for building tax and asset protection structures. Use keyboard shortcuts: Arrow keys to move, Ctrl+C/V to copy/paste, Space to toggle grid, Escape to clear selection."
       tabIndex="0"
+      aria-describedby="canvas-instructions"
       style={{ 
         minHeight: '100%',
         transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
-        transformOrigin: '0 0'
+        transformOrigin: '0 0',
+        transition: isPanning ? 'none' : 'transform 0.2s ease-out'
       }}
     >
+      {/* Hidden instructions for screen readers */}
+      <div id="canvas-instructions" className="sr-only">
+        Canvas navigation: Use arrow keys to move selected entities, Ctrl+wheel to zoom, 
+        drag with mouse to pan, Space to toggle grid, Escape to clear selection.
+        Currently {entities.length} entities and {connections.length} connections.
+        Zoom level: {Math.round(zoom * 100)}%
+      </div>
       {/* Canvas Tools Overlay */}
       {selectedEntities.size > 0 && (
         <div className="absolute top-4 left-4 z-40 bg-white rounded-lg shadow-lg border p-2 flex gap-2">
@@ -1137,29 +1227,39 @@ onMouseDown={(e) => handleMouseDown(e, entity)}
             )}
             
             {/* Enhanced Connection handles with touch support */}
+{/* Enhanced Connection handles with improved touch support */}
             <div className="absolute -top-2 -right-2 connection-handle">
               <button
-                className={`w-8 h-8 rounded-full border-2 border-white shadow-lg transition-all duration-200 flex items-center justify-center touch-target ${
+                className={`w-10 h-10 rounded-full border-2 border-white shadow-lg transition-all duration-200 flex items-center justify-center touch-target ${
                   isConnecting && connectionStart === entity.id
-                    ? 'bg-green-500 hover:bg-green-600 scale-110' 
-                    : 'bg-blue-500 hover:bg-blue-600 hover:scale-110'
+                    ? 'bg-green-500 hover:bg-green-600 scale-110 animate-pulse' 
+                    : 'bg-blue-500 hover:bg-blue-600 hover:scale-110 active:scale-95'
                 }`}
                 onMouseDown={(e) => handleConnectionStart(entity.id, e)}
                 onMouseUp={(e) => handleConnectionEnd(entity.id, e)}
                 onTouchStart={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   handleConnectionStart(entity.id, e);
                 }}
                 onTouchEnd={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   handleConnectionEnd(entity.id, e);
                 }}
-                title="Connect to another entity"
-                aria-label={`Create connection from ${entity.type} ${entity.name}`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleConnectionStart(entity.id, e);
+                  }
+                }}
+                title={`Connect ${entity.type} to another entity`}
+                aria-label={`Create connection from ${entity.type} ${entity.name}. Click and drag to another entity to create a connection.`}
+                tabIndex="0"
               >
                 <ApperIcon 
                   name={isConnecting && connectionStart === entity.id ? "Link" : "Plus"} 
-                  size={14} 
+                  size={16} 
                   className="text-white" 
                 />
               </button>
@@ -1170,13 +1270,29 @@ onMouseDown={(e) => handleMouseDown(e, entity)}
               <div className="absolute -top-3 -left-3 w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
                 <ApperIcon name="AlertCircle" size={12} className="text-white" />
               </div>
-            )}
+)}
           </motion.div>
         ))}
       </AnimatePresence>
+      
+      {/* Enhanced help overlay */}
+      {entities.length > 0 && selectedEntities.size === 0 && (
+        <div className="absolute bottom-8 left-8 bg-white/90 backdrop-blur-sm rounded-lg p-4 shadow-lg border border-gray-200 max-w-sm">
+          <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+            <ApperIcon name="Info" size={16} className="text-blue-500" />
+            Quick Tips
+          </h4>
+          <div className="space-y-1 text-sm text-gray-700">
+            <p>• <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Click</kbd> to select entities</p>
+            <p>• <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+Click</kbd> for multi-select</p>
+            <p>• <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Arrow keys</kbd> to move selected</p>
+            <p>• <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+Wheel</kbd> to zoom</p>
+            <p>• <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Space</kbd> to toggle grid</p>
+          </div>
+        </div>
+      )}
     </div>
-);
-});
+  );
 
 Canvas.displayName = 'Canvas';
 

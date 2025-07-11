@@ -55,7 +55,7 @@ const [aiPanelOpen, setAiPanelOpen] = useState(false);
         </div>
       </motion.div>
 
-      {/* Mobile Left Sidebar Overlay */}
+{/* Mobile Left Sidebar Overlay with improved touch handling */}
       <motion.div
         initial={false}
         animate={{ x: leftSidebarOpen ? 0 : -280 }}
@@ -64,8 +64,8 @@ const [aiPanelOpen, setAiPanelOpen] = useState(false);
         aria-modal="true"
         aria-label="Mobile component library"
       >
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-4">
+        <div className="p-4 h-full overflow-y-auto">
+          <div className="flex items-center justify-between mb-4 sticky top-0 bg-white pb-2 border-b border-gray-100">
             <div className="flex items-center gap-2">
               <motion.div 
                 className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg"
@@ -83,7 +83,7 @@ const [aiPanelOpen, setAiPanelOpen] = useState(false);
               variant="ghost"
               size="sm"
               onClick={() => setLeftSidebarOpen(false)}
-              className="touch-target"
+              className="touch-target hover:bg-gray-100 active:scale-95"
               aria-label="Close mobile assets sidebar"
             >
               <ApperIcon name="X" size={20} />
@@ -92,19 +92,18 @@ const [aiPanelOpen, setAiPanelOpen] = useState(false);
           <ComponentToolbar onAddEntity={onAddEntity} sectionType="assets" />
         </div>
       </motion.div>
-
-      {/* Main Content */}
+{/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Enhanced Header with Quick Actions */}
         <header
-          className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm"
+          className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm sticky top-0 z-30"
           role="banner"
         >
           <div className="flex items-center gap-3">
             <Button
               size="sm"
               onClick={() => setLeftSidebarOpen(true)}
-              className="lg:hidden touch-target"
+              className="lg:hidden touch-target hover:bg-gray-100 active:scale-95"
               aria-label="Open assets section"
             >
               <ApperIcon name="Menu" size={20} />
@@ -114,22 +113,27 @@ const [aiPanelOpen, setAiPanelOpen] = useState(false);
               variant="ghost"
               size="sm"
               onClick={() => setLeftSidebarOpen(!leftSidebarOpen)}
-              className="hidden lg:flex touch-target"
+              className="hidden lg:flex touch-target hover:bg-gray-100 active:scale-95"
               aria-label={leftSidebarOpen ? "Hide assets section" : "Show assets section"}
             >
               <ApperIcon name="PanelLeft" size={20} />
             </Button>
             
-            <div className="text-sm text-gray-600 font-medium">
+            <div className="text-sm text-gray-600 font-medium hidden sm:flex">
               <span className="inline-flex items-center gap-1">
-                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
                 {entities.length} entities
               </span>
               <span className="mx-2">•</span>
               <span className="inline-flex items-center gap-1">
-                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 {connections.length} connections
               </span>
+            </div>
+            
+            {/* Mobile-friendly entity count */}
+            <div className="text-xs text-gray-500 sm:hidden">
+              {entities.length}E • {connections.length}C
             </div>
           </div>
           
@@ -138,27 +142,27 @@ const [aiPanelOpen, setAiPanelOpen] = useState(false);
               variant="ghost"
               size="sm"
               onClick={() => setAiPanelOpen(!aiPanelOpen)}
-              className="touch-target"
+              className="touch-target hover:bg-blue-50 active:scale-95"
               aria-label="Toggle AI Assistant"
             >
-              <ApperIcon name="Bot" size={20} />
+              <ApperIcon name="Bot" size={20} className={aiPanelOpen ? "text-blue-600" : ""} />
             </Button>
             
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setExportPanelOpen(!exportPanelOpen)}
-              className="touch-target"
+              className="touch-target hover:bg-green-50 active:scale-95"
               aria-label="Toggle Export & Share"
             >
-              <ApperIcon name="Download" size={20} />
+              <ApperIcon name="Download" size={20} className={exportPanelOpen ? "text-green-600" : ""} />
             </Button>
             
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
-              className="touch-target"
+              className="touch-target hover:bg-gray-100 active:scale-95"
               aria-label={rightSidebarOpen ? "Hide operations panel" : "Show operations panel"}
             >
               <ApperIcon name="PanelRight" size={20} />
@@ -166,9 +170,9 @@ const [aiPanelOpen, setAiPanelOpen] = useState(false);
           </div>
         </header>
         
-        {/* Enhanced Canvas Area */}
-        <main className="flex-1 p-6 relative overflow-hidden" role="main">
-          <div className="h-full w-full relative">
+        {/* Enhanced Canvas Area with improved mobile handling */}
+        <main className="flex-1 p-2 sm:p-6 relative overflow-hidden" role="main">
+          <div className="h-full w-full relative rounded-lg overflow-hidden">
             {children}
           </div>
         </main>
