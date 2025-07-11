@@ -1,4 +1,4 @@
-import React, { forwardRef, useCallback, useRef, useState } from "react";
+import React, { forwardRef, useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import ApperIcon from "@/components/ApperIcon";
 import Error from "@/components/ui/Error";
@@ -25,6 +25,20 @@ const [draggedEntity, setDraggedEntity] = useState(null);
   const [validDropZone, setValidDropZone] = useState(true);
   const [connectionPreview, setConnectionPreview] = useState(null);
   const [validationErrors, setValidationErrors] = useState([]);
+  const [selectedEntities, setSelectedEntities] = useState(new Set());
+  const [isMultiSelect, setIsMultiSelect] = useState(false);
+  const [selectionRect, setSelectionRect] = useState(null);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [clipboard, setClipboard] = useState([]);
+  const [history, setHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [showGrid, setShowGrid] = useState(true);
+  const [showAlignmentGuides, setShowAlignmentGuides] = useState(true);
+  const [alignmentGuides, setAlignmentGuides] = useState([]);
   const canvasRef = useRef(null);
 
   // Grid snap helper
@@ -97,7 +111,8 @@ const [draggedEntity, setDraggedEntity] = useState(null);
     return errors;
   };
 
-const handleMouseDown = useCallback((e, entity) => {
+// Enhanced mouse down handler with multi-select support
+  const handleMouseDown = useCallback((e, entity) => {
     if (e.target.closest(".connection-handle")) return;
     
     // Prevent null reference error and ensure canvas is available
@@ -106,60 +121,423 @@ const handleMouseDown = useCallback((e, entity) => {
     const rect = canvasRef.current.getBoundingClientRect();
     const entityRect = e.currentTarget.getBoundingClientRect();
     
+    // Handle multi-select with Ctrl/Cmd key
+    if (e.ctrlKey || e.metaKey) {
+      setIsMultiSelect(true);
+      const newSelection = new Set(selectedEntities);
+      if (newSelection.has(entity.id)) {
+        newSelection.delete(entity.id);
+      } else {
+        newSelection.add(entity.id);
+      }
+      setSelectedEntities(newSelection);
+      return;
+    }
+    
     // Clear previous validation errors
     setValidationErrors([]);
+    
+    // If entity is not in current selection, start new selection
+    if (!selectedEntities.has(entity.id)) {
+      setSelectedEntities(new Set([entity.id]));
+      onSelectEntity(entity);
+    }
     
     setDraggedEntity(entity);
     setDragOffset({
       x: e.clientX - entityRect.left,
       y: e.clientY - entityRect.top
     });
-    onSelectEntity(entity);
     
     // Add mouse move and up listeners to document for better tracking
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [onSelectEntity]);
+  }, [onSelectEntity, selectedEntities]);
 
-const handleMouseMove = useCallback((e) => {
+  // Enhanced mouse move handler with multi-entity support
+  const handleMouseMove = useCallback((e) => {
     if (!draggedEntity || !canvasRef.current) return;
     
     const rect = canvasRef.current.getBoundingClientRect();
-    const newPosition = {
-      x: e.clientX - rect.left - dragOffset.x,
-      y: e.clientY - rect.top - dragOffset.y
-    };
+    const deltaX = e.clientX - rect.left - dragOffset.x - draggedEntity.position.x;
+    const deltaY = e.clientY - rect.top - dragOffset.y - draggedEntity.position.y;
     
-    // Snap to grid
-    const snappedPosition = snapToGrid(newPosition);
-    
-    // Constrain to canvas bounds with better edge handling
-    const entityWidth = 200;
-    const entityHeight = 150;
-    snappedPosition.x = Math.max(0, Math.min(rect.width - entityWidth, snappedPosition.x));
-    snappedPosition.y = Math.max(0, Math.min(rect.height - entityHeight, snappedPosition.y));
-    
-    // Real-time validation with immediate feedback
-    const errors = validateEntityPosition(draggedEntity, snappedPosition);
-    setValidationErrors(errors);
-    setValidDropZone(errors.length === 0);
-    
-    // Update entity position immediately for smooth dragging
-    onUpdateEntity(draggedEntity.id, {
-      ...draggedEntity,
-      position: snappedPosition
+    // Move all selected entities
+    selectedEntities.forEach(entityId => {
+      const entity = entities.find(e => e.id === entityId);
+      if (!entity) return;
+      
+      const newPosition = {
+        x: entity.position.x + deltaX,
+        y: entity.position.y + deltaY
+      };
+      
+      // Snap to grid
+      const snappedPosition = snapToGrid(newPosition);
+      
+      // Constrain to canvas bounds
+      const entityWidth = 200;
+      const entityHeight = 150;
+      snappedPosition.x = Math.max(0, Math.min(rect.width - entityWidth, snappedPosition.x));
+      snappedPosition.y = Math.max(0, Math.min(rect.height - entityHeight, snappedPosition.y));
+      
+      // Update alignment guides
+      if (showAlignmentGuides) {
+        updateAlignmentGuides(entity, snappedPosition);
+      }
+      
+      // Update entity position immediately for smooth dragging
+      onUpdateEntity(entity.id, {
+        ...entity,
+        position: snappedPosition
+      });
     });
-  }, [draggedEntity, dragOffset, onUpdateEntity, entities]);
-const handleMouseUp = useCallback(() => {
+  }, [draggedEntity, dragOffset, onUpdateEntity, entities, selectedEntities, showAlignmentGuides]);
+
+  const handleMouseUp = useCallback(() => {
     setDraggedEntity(null);
     setDragOffset({ x: 0, y: 0 });
     setValidationErrors([]);
     setValidDropZone(true);
+    setAlignmentGuides([]);
     
     // Clean up event listeners
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', handleMouseUp);
   }, [handleMouseMove]);
+// Keyboard navigation and shortcuts
+  const handleKeyDown = useCallback((e) => {
+    if (!canvasRef.current) return;
+    
+    // Prevent default for handled keys
+    const handledKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Delete', 'Backspace', 'KeyC', 'KeyV', 'KeyZ', 'KeyY'];
+    if (handledKeys.includes(e.code) || (e.ctrlKey && handledKeys.includes(e.code))) {
+      e.preventDefault();
+    }
+    
+    // Movement with arrow keys
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+      const moveDistance = e.shiftKey ? 40 : 20; // Shift for larger steps
+      const deltaX = e.code === 'ArrowLeft' ? -moveDistance : e.code === 'ArrowRight' ? moveDistance : 0;
+      const deltaY = e.code === 'ArrowUp' ? -moveDistance : e.code === 'ArrowDown' ? moveDistance : 0;
+      
+      selectedEntities.forEach(entityId => {
+        const entity = entities.find(e => e.id === entityId);
+        if (!entity) return;
+        
+        const newPosition = {
+          x: Math.max(0, entity.position.x + deltaX),
+          y: Math.max(0, entity.position.y + deltaY)
+        };
+        
+        onUpdateEntity(entity.id, {
+          ...entity,
+          position: newPosition
+        });
+      });
+    }
+    
+    // Delete selected entities
+    if (e.code === 'Delete' || e.code === 'Backspace') {
+      selectedEntities.forEach(entityId => {
+        onDeleteEntity(entityId);
+      });
+      setSelectedEntities(new Set());
+    }
+    
+    // Copy (Ctrl+C)
+    if (e.ctrlKey && e.code === 'KeyC') {
+      handleCopy();
+    }
+    
+    // Paste (Ctrl+V)
+    if (e.ctrlKey && e.code === 'KeyV') {
+      handlePaste();
+    }
+    
+    // Undo (Ctrl+Z)
+    if (e.ctrlKey && e.code === 'KeyZ' && !e.shiftKey) {
+      handleUndo();
+    }
+    
+    // Redo (Ctrl+Y or Ctrl+Shift+Z)
+    if ((e.ctrlKey && e.code === 'KeyY') || (e.ctrlKey && e.shiftKey && e.code === 'KeyZ')) {
+      handleRedo();
+    }
+    
+    // Select all (Ctrl+A)
+    if (e.ctrlKey && e.code === 'KeyA') {
+      setSelectedEntities(new Set(entities.map(e => e.id)));
+    }
+  }, [entities, selectedEntities, onUpdateEntity, onDeleteEntity]);
+
+  // Zoom and pan functionality
+  const handleWheel = useCallback((e) => {
+    if (!canvasRef.current) return;
+    e.preventDefault();
+    
+    if (e.ctrlKey) {
+      // Zoom with Ctrl + wheel
+      const delta = e.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = Math.min(3, Math.max(0.5, zoom * delta));
+      setZoom(newZoom);
+    } else {
+      // Pan with wheel
+      setPan(prev => ({
+        x: prev.x - e.deltaX,
+        y: prev.y - e.deltaY
+      }));
+    }
+  }, [zoom]);
+
+  // Pan start handler
+  const handlePanStart = useCallback((e) => {
+    if (e.button === 1 || (e.button === 0 && e.altKey)) { // Middle mouse or Alt+Left mouse
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+      e.preventDefault();
+    }
+  }, [pan]);
+
+  // Pan move handler
+  const handlePanMove = useCallback((e) => {
+    if (!isPanning) return;
+    setPan({
+      x: e.clientX - panStart.x,
+      y: e.clientY - panStart.y
+    });
+  }, [isPanning, panStart]);
+
+  // Pan end handler
+  const handlePanEnd = useCallback(() => {
+    setIsPanning(false);
+  }, []);
+
+  // Copy functionality
+  const handleCopy = useCallback(() => {
+    const entitiesToCopy = entities.filter(e => selectedEntities.has(e.id));
+    setClipboard(entitiesToCopy);
+  }, [entities, selectedEntities]);
+
+  // Paste functionality
+  const handlePaste = useCallback(() => {
+    if (clipboard.length === 0) return;
+    
+    const pastedEntities = [];
+    clipboard.forEach(entity => {
+      const newPosition = {
+        x: entity.position.x + 50,
+        y: entity.position.y + 50
+      };
+      
+      // Create new entity with offset position
+      const newEntity = {
+        ...entity,
+        id: Date.now() + Math.random(),
+        position: newPosition,
+        name: `${entity.name} (Copy)`
+      };
+      
+      pastedEntities.push(newEntity);
+      onAddEntity(entity.type, newPosition);
+    });
+    
+    // Select pasted entities
+    setTimeout(() => {
+      setSelectedEntities(new Set(pastedEntities.map(e => e.id)));
+    }, 100);
+  }, [clipboard, onAddEntity]);
+
+  // Undo functionality
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      setHistoryIndex(historyIndex - 1);
+      const previousState = history[historyIndex - 1];
+      // Apply previous state - this would need integration with parent state
+    }
+  }, [history, historyIndex]);
+
+  // Redo functionality
+  const handleRedo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      setHistoryIndex(historyIndex + 1);
+      const nextState = history[historyIndex + 1];
+      // Apply next state - this would need integration with parent state
+    }
+  }, [history, historyIndex]);
+
+  // Selection rectangle functionality
+  const handleSelectionStart = useCallback((e) => {
+    if (e.button !== 0 || e.target !== canvasRef.current) return;
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const startX = e.clientX - rect.left;
+    const startY = e.clientY - rect.top;
+    
+    setIsSelecting(true);
+    setSelectionRect({
+      startX,
+      startY,
+      endX: startX,
+      endY: startY
+    });
+  }, []);
+
+  const handleSelectionMove = useCallback((e) => {
+    if (!isSelecting || !selectionRect) return;
+    
+    const rect = canvasRef.current.getBoundingClientRect();
+    const endX = e.clientX - rect.left;
+    const endY = e.clientY - rect.top;
+    
+    setSelectionRect(prev => ({
+      ...prev,
+      endX,
+      endY
+    }));
+    
+    // Update selected entities based on rectangle
+    const minX = Math.min(selectionRect.startX, endX);
+    const maxX = Math.max(selectionRect.startX, endX);
+    const minY = Math.min(selectionRect.startY, endY);
+    const maxY = Math.max(selectionRect.startY, endY);
+    
+    const entitiesInRect = entities.filter(entity => {
+      const entityX = entity.position.x;
+      const entityY = entity.position.y;
+      return entityX >= minX && entityX <= maxX && entityY >= minY && entityY <= maxY;
+    });
+    
+    setSelectedEntities(new Set(entitiesInRect.map(e => e.id)));
+  }, [isSelecting, selectionRect, entities]);
+
+  const handleSelectionEnd = useCallback(() => {
+    setIsSelecting(false);
+    setSelectionRect(null);
+  }, []);
+
+  // Alignment guides
+  const updateAlignmentGuides = useCallback((movingEntity, newPosition) => {
+    const guides = [];
+    const threshold = 10;
+    
+    entities.forEach(entity => {
+      if (entity.id === movingEntity.id) return;
+      
+      // Vertical alignment
+      if (Math.abs(entity.position.x - newPosition.x) < threshold) {
+        guides.push({
+          type: 'vertical',
+          position: entity.position.x,
+          start: Math.min(entity.position.y, newPosition.y),
+          end: Math.max(entity.position.y + 150, newPosition.y + 150)
+        });
+      }
+      
+      // Horizontal alignment
+      if (Math.abs(entity.position.y - newPosition.y) < threshold) {
+        guides.push({
+          type: 'horizontal',
+          position: entity.position.y,
+          start: Math.min(entity.position.x, newPosition.x),
+          end: Math.max(entity.position.x + 200, newPosition.x + 200)
+        });
+      }
+    });
+    
+    setAlignmentGuides(guides);
+  }, [entities]);
+
+  // Canvas tools
+  const handleAlignLeft = useCallback(() => {
+    if (selectedEntities.size < 2) return;
+    
+    const entitiesArray = entities.filter(e => selectedEntities.has(e.id));
+    const minX = Math.min(...entitiesArray.map(e => e.position.x));
+    
+    entitiesArray.forEach(entity => {
+      onUpdateEntity(entity.id, {
+        ...entity,
+        position: { ...entity.position, x: minX }
+      });
+    });
+  }, [entities, selectedEntities, onUpdateEntity]);
+
+  const handleAlignTop = useCallback(() => {
+    if (selectedEntities.size < 2) return;
+    
+    const entitiesArray = entities.filter(e => selectedEntities.has(e.id));
+    const minY = Math.min(...entitiesArray.map(e => e.position.y));
+    
+    entitiesArray.forEach(entity => {
+      onUpdateEntity(entity.id, {
+        ...entity,
+        position: { ...entity.position, y: minY }
+      });
+    });
+  }, [entities, selectedEntities, onUpdateEntity]);
+
+  const handleDistributeHorizontally = useCallback(() => {
+    if (selectedEntities.size < 3) return;
+    
+    const entitiesArray = entities.filter(e => selectedEntities.has(e.id))
+      .sort((a, b) => a.position.x - b.position.x);
+    
+    const totalWidth = entitiesArray[entitiesArray.length - 1].position.x - entitiesArray[0].position.x;
+    const spacing = totalWidth / (entitiesArray.length - 1);
+    
+    entitiesArray.forEach((entity, index) => {
+      if (index === 0 || index === entitiesArray.length - 1) return;
+      
+      onUpdateEntity(entity.id, {
+        ...entity,
+        position: {
+          ...entity.position,
+          x: entitiesArray[0].position.x + (spacing * index)
+        }
+      });
+    });
+  }, [entities, selectedEntities, onUpdateEntity]);
+
+  // Add keyboard event listeners
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    canvas.addEventListener('keydown', handleKeyDown);
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+    
+    return () => {
+      canvas.removeEventListener('keydown', handleKeyDown);
+      canvas.removeEventListener('wheel', handleWheel);
+    };
+  }, [handleKeyDown, handleWheel]);
+
+  // Add pan event listeners
+  useEffect(() => {
+    if (!isPanning) return;
+    
+    document.addEventListener('mousemove', handlePanMove);
+    document.addEventListener('mouseup', handlePanEnd);
+    
+    return () => {
+      document.removeEventListener('mousemove', handlePanMove);
+      document.removeEventListener('mouseup', handlePanEnd);
+    };
+  }, [isPanning, handlePanMove, handlePanEnd]);
+
+  // Add selection rectangle listeners
+  useEffect(() => {
+    if (!isSelecting) return;
+    
+    document.addEventListener('mousemove', handleSelectionMove);
+    document.addEventListener('mouseup', handleSelectionEnd);
+    
+    return () => {
+      document.removeEventListener('mousemove', handleSelectionMove);
+      document.removeEventListener('mouseup', handleSelectionEnd);
+    };
+  }, [isSelecting, handleSelectionMove, handleSelectionEnd]);
 // Handle drag from library with enhanced validation
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
@@ -488,11 +866,12 @@ const renderConnection = (connection) => {
 return (
     <div
       ref={ref || canvasRef}
-      className={`relative w-full h-full canvas-grid bg-white rounded-lg border-2 transition-all duration-300 overflow-hidden shadow-inner ${
+      className={`relative w-full h-full ${showGrid ? 'canvas-grid' : ''} bg-white rounded-lg border-2 transition-all duration-300 overflow-hidden shadow-inner ${
         isDragOver ? 'border-blue-500 bg-blue-50 shadow-blue-500/20' : 'border-gray-300'
       } ${validDropZone ? 'shadow-lg' : 'border-red-500 bg-red-50 shadow-red-500/20'}`}
       onMouseMove={handleMouseMove}
-onMouseUp={handleMouseUp}
+      onMouseUp={handleMouseUp}
+      onMouseDown={handleSelectionStart}
       onClick={handleCanvasClick}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -500,8 +879,129 @@ onMouseUp={handleMouseUp}
       role="application"
       aria-label="Canvas for building tax and asset protection structures"
       tabIndex="0"
-      style={{ minHeight: '100%' }}
+      style={{ 
+        minHeight: '100%',
+        transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
+        transformOrigin: '0 0'
+      }}
     >
+      {/* Canvas Tools Overlay */}
+      {selectedEntities.size > 0 && (
+        <div className="absolute top-4 left-4 z-40 bg-white rounded-lg shadow-lg border p-2 flex gap-2">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={handleAlignLeft}
+            className="p-2 hover:bg-gray-100 rounded"
+            title="Align Left"
+          >
+            <ApperIcon name="AlignLeft" size={16} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={handleAlignTop}
+            className="p-2 hover:bg-gray-100 rounded"
+            title="Align Top"
+          >
+            <ApperIcon name="AlignTop" size={16} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={handleDistributeHorizontally}
+            className="p-2 hover:bg-gray-100 rounded"
+            title="Distribute Horizontally"
+            disabled={selectedEntities.size < 3}
+          >
+            <ApperIcon name="DistributeHorizontal" size={16} />
+          </motion.button>
+          <div className="border-l mx-2" />
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={handleCopy}
+            className="p-2 hover:bg-gray-100 rounded"
+            title="Copy (Ctrl+C)"
+          >
+            <ApperIcon name="Copy" size={16} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={handlePaste}
+            className="p-2 hover:bg-gray-100 rounded"
+            title="Paste (Ctrl+V)"
+            disabled={clipboard.length === 0}
+          >
+            <ApperIcon name="Clipboard" size={16} />
+          </motion.button>
+        </div>
+      )}
+      
+      {/* Zoom Controls */}
+      <div className="absolute bottom-4 right-4 z-40 bg-white rounded-lg shadow-lg border p-2 flex flex-col gap-2">
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setZoom(Math.min(3, zoom * 1.2))}
+          className="p-2 hover:bg-gray-100 rounded"
+          title="Zoom In"
+        >
+          <ApperIcon name="ZoomIn" size={16} />
+        </motion.button>
+        <div className="text-xs text-center font-mono">{Math.round(zoom * 100)}%</div>
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => setZoom(Math.max(0.5, zoom * 0.8))}
+          className="p-2 hover:bg-gray-100 rounded"
+          title="Zoom Out"
+        >
+          <ApperIcon name="ZoomOut" size={16} />
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}
+          className="p-2 hover:bg-gray-100 rounded"
+          title="Reset View"
+        >
+          <ApperIcon name="Home" size={16} />
+        </motion.button>
+      </div>
+      
+      {/* Selection Rectangle */}
+      {isSelecting && selectionRect && (
+        <div
+          className="absolute border-2 border-blue-500 bg-blue-200 bg-opacity-20 pointer-events-none"
+          style={{
+            left: Math.min(selectionRect.startX, selectionRect.endX),
+            top: Math.min(selectionRect.startY, selectionRect.endY),
+            width: Math.abs(selectionRect.endX - selectionRect.startX),
+            height: Math.abs(selectionRect.endY - selectionRect.startY)
+          }}
+        />
+      )}
+      
+      {/* Alignment Guides */}
+      {showAlignmentGuides && (
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 2 }}>
+          {alignmentGuides.map((guide, index) => (
+            <line
+              key={index}
+              x1={guide.type === 'vertical' ? guide.position : guide.start}
+              y1={guide.type === 'vertical' ? guide.start : guide.position}
+              x2={guide.type === 'vertical' ? guide.position : guide.end}
+              y2={guide.type === 'vertical' ? guide.end : guide.position}
+              stroke="#3b82f6"
+              strokeWidth="1"
+              strokeDasharray="4,4"
+              opacity="0.7"
+            />
+          ))}
+        </svg>
+      )}
 {/* Validation Error Display */}
       {validationErrors.length > 0 && (
         <div className="absolute top-4 right-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg shadow-lg z-30 max-w-xs">
@@ -617,22 +1117,30 @@ onMouseUp={handleMouseUp}
               top: entity.position.y,
               zIndex: selectedEntity?.id === entity.id ? 10 : 5
             }}
-            onMouseDown={(e) => handleMouseDown(e, entity)}
+onMouseDown={(e) => handleMouseDown(e, entity)}
             className="pointer-events-auto"
           >
             <EntityCard
               entity={entity}
-              isSelected={selectedEntity?.id === entity.id}
+              isSelected={selectedEntity?.id === entity.id || selectedEntities.has(entity.id)}
+              isMultiSelected={selectedEntities.has(entity.id)}
               onSelect={() => onSelectEntity(entity)}
               onDelete={onDeleteEntity}
               isDragging={draggedEntity?.id === entity.id}
             />
             
-{/* Enhanced Connection handles with touch support */}
+            {/* Multi-select indicator */}
+            {selectedEntities.has(entity.id) && selectedEntities.size > 1 && (
+              <div className="absolute -top-2 -left-2 w-6 h-6 bg-blue-500 rounded-full border-2 border-white shadow-lg flex items-center justify-center">
+                <span className="text-white text-xs font-bold">{Array.from(selectedEntities).indexOf(entity.id) + 1}</span>
+              </div>
+            )}
+            
+            {/* Enhanced Connection handles with touch support */}
             <div className="absolute -top-2 -right-2 connection-handle">
               <button
                 className={`w-8 h-8 rounded-full border-2 border-white shadow-lg transition-all duration-200 flex items-center justify-center touch-target ${
-                  isConnecting && connectionStart === entity.id 
+                  isConnecting && connectionStart === entity.id
                     ? 'bg-green-500 hover:bg-green-600 scale-110' 
                     : 'bg-blue-500 hover:bg-blue-600 hover:scale-110'
                 }`}

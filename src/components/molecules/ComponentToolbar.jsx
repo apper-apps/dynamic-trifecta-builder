@@ -176,26 +176,63 @@ const getSectionConfig = () => {
             </div>
           </motion.div>
         ))}
-      </div>
+</div>
       
-{sectionType === "all" && (
+      {/* Canvas Tools Section */}
+      {sectionType === "all" && (
         <motion.div 
-          className="mt-6 p-4 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg border-2 border-blue-300 shadow-md"
+          className="mt-6 p-4 bg-gradient-to-br from-gray-50 to-blue-50 rounded-lg border-2 border-gray-300 shadow-md"
           whileHover={{ scale: 1.02 }}
           transition={{ duration: 0.2 }}
         >
-        <div className="flex items-start gap-2">
-          <motion.div
-            animate={{ rotate: [0, 20, 0] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <ApperIcon name="Lightbulb" size={16} className="text-yellow-600 mt-0.5" />
-          </motion.div>
-          <div className="text-sm text-blue-900">
-            <p className="font-bold mb-1">Pro Tip from Mark Kohler!</p>
-            <p className="font-medium">Drag components to the canvas or click to add. Connect entities to show relationships and watch the magic happen! ✨</p>
+          <div className="flex items-center gap-2 mb-3">
+            <ApperIcon name="Settings" size={16} className="text-gray-600" />
+            <h3 className="font-bold text-gray-900">Canvas Tools</h3>
           </div>
-</div>
+          
+          <div className="space-y-2 text-sm text-gray-700">
+            <div className="flex items-center gap-2">
+              <ApperIcon name="Mouse" size={12} className="text-gray-500" />
+              <span>Click & drag to move entities</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ApperIcon name="Command" size={12} className="text-gray-500" />
+              <span>Ctrl+Click for multi-select</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ApperIcon name="ArrowKeys" size={12} className="text-gray-500" />
+              <span>Arrow keys to nudge selected</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ApperIcon name="MousePointer" size={12} className="text-gray-500" />
+              <span>Ctrl+Wheel to zoom canvas</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ApperIcon name="Copy" size={12} className="text-gray-500" />
+              <span>Ctrl+C/V to copy & paste</span>
+            </div>
+          </div>
+        </motion.div>
+      )}
+      
+      {sectionType === "all" && (
+        <motion.div 
+          className="mt-4 p-4 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg border-2 border-blue-300 shadow-md"
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.2 }}
+        >
+          <div className="flex items-start gap-2">
+            <motion.div
+              animate={{ rotate: [0, 20, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              <ApperIcon name="Lightbulb" size={16} className="text-yellow-600 mt-0.5" />
+            </motion.div>
+            <div className="text-sm text-blue-900">
+              <p className="font-bold mb-1">Pro Tip from Mark Kohler!</p>
+              <p className="font-medium">Use the enhanced canvas tools for professional structure design. Multi-select, align, and organize your entities with precision! ✨</p>
+            </div>
+          </div>
         </motion.div>
       )}
       

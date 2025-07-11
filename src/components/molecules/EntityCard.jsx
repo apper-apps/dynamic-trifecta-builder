@@ -6,6 +6,7 @@ import ApperIcon from "@/components/ApperIcon";
 const EntityCard = ({ 
   entity, 
   isSelected, 
+  isMultiSelected = false,
   onSelect, 
   onDelete,
   isDragging,
@@ -56,11 +57,11 @@ const entityConfig = {
 
 const config = entityConfig[entity.type] || entityConfig.Trust;
 
-  const [isHovered, setIsHovered] = useState(false);
+const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
-    
     // Voice narration for entity details
     const entityInfo = `${entity.type}: ${entity.name}. ${entity.properties.description || 'No description available.'}`;
     if ('speechSynthesis' in window && isHovered) {
@@ -79,24 +80,44 @@ const handleMouseLeave = () => {
     }
   };
 
+const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.8 }}
-whileHover={{ scale: isDragging ? 1.0 : 1.08, y: isDragging ? 0 : -5 }}
+      whileHover={{ scale: isDragging ? 1.0 : 1.08, y: isDragging ? 0 : -5 }}
       whileTap={{ scale: 0.95 }}
-className={cn(
+      className={cn(
         "entity-card w-48 bg-white border-2 cursor-move select-none transition-all duration-300 shadow-lg hover:shadow-2xl",
         isSelected && "ring-4 ring-blue-500 ring-offset-2 shadow-blue-500/25",
+        isMultiSelected && "ring-4 ring-purple-500 ring-offset-2 shadow-purple-500/25",
         isDragging && "opacity-90 rotate-3 scale-105 shadow-2xl z-50 ring-2 ring-purple-400 border-purple-400",
         isHovered && !isDragging && "shadow-xl transform scale-105",
+        isFocused && "ring-2 ring-blue-400 ring-offset-1",
         config.borderColor,
         config.category === "asset" ? "entity-asset" : "entity-operation"
       )}
       onClick={onSelect}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
       role="button"
       aria-label={`${entity.type} entity: ${entity.name}. Click to select, drag to move. ${entity.properties.description || ''}`}
       tabIndex="0"
@@ -163,9 +184,18 @@ className={cn(
       </div>
       
       {/* Visual enhancement indicators */}
+{/* Visual enhancement indicators */}
       {isSelected && (
         <motion.div
           className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"
+          animate={{ scale: [1, 1.5, 1] }}
+          transition={{ duration: 1, repeat: Infinity }}
+        />
+      )}
+      
+      {isMultiSelected && (
+        <motion.div
+          className="absolute -top-1 -left-1 w-3 h-3 bg-purple-500 rounded-full"
           animate={{ scale: [1, 1.5, 1] }}
           transition={{ duration: 1, repeat: Infinity }}
         />
@@ -176,6 +206,14 @@ className={cn(
           className="absolute inset-0 border-2 border-dashed border-purple-400 rounded-lg pointer-events-none"
           animate={{ opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 0.8, repeat: Infinity }}
+        />
+      )}
+      
+{isFocused && (
+        <motion.div
+          className="absolute inset-0 border-2 border-dashed border-blue-400 rounded-lg pointer-events-none"
+          animate={{ opacity: [0.7, 1, 0.7] }}
+          transition={{ duration: 1, repeat: Infinity }}
         />
       )}
     </motion.div>
